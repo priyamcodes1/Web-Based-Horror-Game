@@ -27,12 +27,12 @@ const SURFACES = {
   Stove: [[0.3, 0.9, 0.1]],
 };
 const LIGHTS = {
-  Chandelier_Light: { color: 0xffb46a, intensity: 18, range: 11, kind: 'electric' },
-  Sconce_Light: { color: 0xffae5c, intensity: 5, range: 6, kind: 'electric' },
-  TableLamp_Light: { color: 0xffb870, intensity: 4, range: 5, kind: 'electric' },
-  Fireplace_Light: { color: 0xff6a22, intensity: 10, range: 7, kind: 'fire' },
-  Candelabra_Light: { color: 0xff9a3c, intensity: 4, range: 5, kind: 'fire' },
-  Bulb_Light: { color: 0xffd9a0, intensity: 7, range: 7, kind: 'electric' },
+  Chandelier_Light: { color: 0xffb46a, intensity: 150, range: 15, kind: 'electric' },
+  Sconce_Light: { color: 0xffae5c, intensity: 34, range: 9, kind: 'electric' },
+  TableLamp_Light: { color: 0xffb870, intensity: 26, range: 8, kind: 'electric' },
+  Fireplace_Light: { color: 0xff6a22, intensity: 55, range: 10, kind: 'fire' },
+  Candelabra_Light: { color: 0xff9a3c, intensity: 18, range: 8, kind: 'fire' },
+  Bulb_Light: { color: 0xffd9a0, intensity: 75, range: 11, kind: 'electric' },
 };
 
 export class Furnisher {
@@ -700,5 +700,5 @@ function candelOn(F, r, l, host, h) {
   const c = cloneProp('items', 'Candle'); applyLibrary(c);
   c.position.copy(host.position); c.position.y = l * FH + h;
   r.group.add(c); c.updateMatrixWorld(true);
-  r.lights.push({ pos: c.position.clone().setY(c.position.y + 0.2), color: 0xff9a3c, intensity: 2.5, range: 4, kind: 'fire', room: r, prop: c, flicker: Math.random() });
+  r.lights.push({ pos: c.position.clone().setY(c.position.y + 0.2), color: 0xff9a3c, intensity: 11, range: 6, kind: 'fire', room: r, prop: c, flicker: Math.random() });
 }

@@ -50,17 +50,15 @@ async function loadTex(url, srgb) {
     let bmp;
     const pw = probe.width, ph = probe.height;
     if (pw > cap) {
+      bmp = await createImageBitmap(blob, { resizeWidth: Math.round(cap), resizeHeight: Math.round(ph * cap / pw), resizeQuality: 'high' });
       probe.close();
-      bmp = await createImageBitmap(blob, { resizeWidth: Math.round(cap), resizeHeight: Math.round(ph * cap / pw), resizeQuality: 'high', imageOrientation: 'flipY' });
-    } else {
-      probe.close();
-      bmp = await createImageBitmap(blob, { imageOrientation: 'flipY' });
-    }
+    } else bmp = probe;
+    // glTF convention (flipY = false) everywhere: the level builder emits V-flipped UVs to match
     const t = new THREE.Texture(bmp);
-    t.flipY = false; // already flipped during decode
+    t.flipY = false;
     return finish(t);
   } catch (_) {
-    return new Promise((res) => texLoader.load(url, (t) => res(finish(t)), undefined, () => res(null)));
+    return new Promise((res) => texLoader.load(url, (t) => { t.flipY = false; res(finish(t)); }, undefined, () => res(null)));
   }
 }
 
@@ -81,11 +79,13 @@ export async function loadImageTexture(name) {
   return t;
 }
 
+const inflight = {};
 export function loadGLTF(name) {
   if (assets.gltf[name]) return Promise.resolve(assets.gltf[name]);
-  return new Promise((res, rej) => {
-    gltfLoader.load(`/models/${name}.glb`, (g) => { assets.gltf[name] = g; res(g); }, undefined, rej);
-  });
+  // one request per model even when the menu thumbnails and the game ask at the same time
+  return (inflight[name] ||= new Promise((res, rej) => {
+    gltfLoader.load(`/models/${name}.glb`, (g) => { assets.gltf[name] = g; delete inflight[name]; res(g); }, undefined, (e) => { delete inflight[name]; rej(e); });
+  }));
 }
 
 /** Standard PBR material from a texture set. */
@@ -166,7 +166,7 @@ export function libMaterial(mname, original) {
     case 'bulb':
       return (emissive.bulb ||= plain('bulb', { color: 0xfff2d8, emissive: 0xffc27a, emissiveIntensity: 3, roughness: 0.3 }));
     case 'flame':
-      return (emissive.flame ||= plain('flame', { color: 0xffa640, emissive: 0xff9a30, emissiveIntensity: 5, transparent: true, opacity: 0.9, depthWrite: false }, THREE.MeshBasicMaterial));
+      return (emissive.flame ||= plain('flame', { color: new THREE.Color(0xffa640).multiplyScalar(4), transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending }, THREE.MeshBasicMaterial));
     case 'ember':
       return (emissive.ember ||= plain('ember', { color: 0x2a0a02, emissive: 0xff3a0a, emissiveIntensity: 2.5, roughness: 0.9 }));
     case 'window_glow':

@@ -162,7 +162,7 @@ export class EscapeCutscene {
     // ---------------- set dressing cues
     if (t > 0.25) this.cue('doors', () => { audio.play('door_slam', { vol: 1 }); audio.play('whoosh', { vol: 0.5 }); });
     const dk = smoothstep(0.25, 0.7, t);
-    for (const d of this.doors) d.pivot.rotation.y = d.sd * dk * 1.9 * -1;
+    for (const d of this.doors) d.pivot.rotation.y = d.sd * dk * 1.9;   // both leaves swing outward
     this.doorLight.intensity = 14 * dk * (0.9 + Math.random() * 0.1);
     const gk = smoothstep(6.1, 6.8, t);
     this.gateL.rotation.y = -gk * 1.5;
@@ -174,7 +174,7 @@ export class EscapeCutscene {
     this.ghost.update(dt);
     // car: door, lights, drive
     const doorOpen = smoothstep(8.4, 8.9, t) * (1 - smoothstep(10.4, 10.7, t));
-    if (this.carDoor) this.carDoor.rotation.y = this.carDoorBase - doorOpen * 1.1;
+    if (this.carDoor) this.carDoor.rotation.y = this.carDoorBase + doorOpen * 1.1;
     if (t > 8.4) this.cue('cardoor', () => audio.play('car_door', { vol: 0.7 }));
     if (t > 10.6) this.cue('cardoor2', () => audio.play('car_door', { vol: 1 }));
     if (t > 11.0) this.cue('start', () => { audio.play('car_start', { vol: 1 }); });

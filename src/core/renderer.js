@@ -57,6 +57,7 @@ const GradeShader = {
       col.rgb *= uBrightness;
       col.rgb *= uTint;
       col.rgb += uFlash;
+      gl_FragColor = vec4(col.rgb, 1.0);
       // tone mapping + output transfer (renderer settings)
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
@@ -86,9 +87,9 @@ export class Renderer {
     this.r.toneMapping = THREE.ACESFilmicToneMapping;
     this.r.toneMappingExposure = 1.0;
     this.r.shadowMap.enabled = true;
-    this.r.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.r.shadowMap.type = THREE.PCFShadowMap;
     this.r.shadowMap.autoUpdate = true;
-    this.r.info.autoReset = true;
+    this.r.info.autoReset = false;   // reset once per frame so the FPS readout shows the whole frame
     this.composer = null;
     this.scene = null;
     this.camera = null;
@@ -162,6 +163,7 @@ export class Renderer {
     const u = this.u;
     u.uTime.value += dt;
     u.uBrightness.value = settings.brightness;
+    this.r.info.reset();
     if (this.composer) this.composer.render(dt);
     else this.r.render(this.scene, this.camera);
   }

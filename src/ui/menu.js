@@ -239,17 +239,17 @@ export function drawMapPreview(cv, def) {
 
 /** Render real 3D portraits of the six survivor profiles (once, off-screen). */
 export async function renderProfileThumbs() {
-  await loadGLTF('player');
+  await Promise.all([loadGLTF('player'), loadGLTF('items')]);
   const W = 180, H = 230;
   const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
   r.setSize(W, H); r.setPixelRatio(1);
   r.outputColorSpace = THREE.SRGBColorSpace;
   r.toneMapping = THREE.ACESFilmicToneMapping;
   const scene = new THREE.Scene();
-  const cam = new THREE.PerspectiveCamera(26, W / H, 0.1, 20);
-  cam.position.set(0.5, 1.45, 2.6); cam.lookAt(0, 1.25, 0);
-  scene.add(new THREE.HemisphereLight(0x8090b0, 0x201010, 0.7));
-  const key = new THREE.DirectionalLight(0xffd8b0, 2.4); key.position.set(1.5, 2.5, 2); scene.add(key);
+  const cam = new THREE.PerspectiveCamera(24, W / H, 0.1, 20);
+  cam.position.set(0.45, 1.5, 2.2); cam.lookAt(0, 1.18, 0);
+  scene.add(new THREE.HemisphereLight(0xa0b0d0, 0x302020, 1.4));
+  const key = new THREE.DirectionalLight(0xffe0c0, 4.0); key.position.set(1.5, 2.5, 2.5); scene.add(key);
   const rim = new THREE.DirectionalLight(0xff3020, 2.5); rim.position.set(-2, 1.8, -1.5); scene.add(rim);
   const out = [];
   for (const P of PROFILES) {

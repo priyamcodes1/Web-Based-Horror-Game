@@ -30,7 +30,7 @@ class Geo {
     const p = this.arr(key);
     for (const v of [a, b, c, a, c, d]) {
       p.pos.push(v[0], v[1], v[2]); p.nrm.push(n[0], n[1], n[2]);
-      const t = uv(v); p.uv.push(t[0], t[1]);
+      const t = uv(v); p.uv.push(t[0], -t[1]);   // textures use the glTF (flipY = false) convention
     }
   }
   /** Axis-aligned box with world-scale UVs. faces: skip set e.g. {'-y':1} */
@@ -376,9 +376,9 @@ export class Level {
         if (opening) this._reveal(G, orient, line, s0, s1, y0, opening, inward, sd.n, wains);
       }
     }
-    // soffit / sill cap across the wall thickness
+    // soffit / sill cap across the wall thickness (shared shell: stays visible whichever side is culled)
     if (opening) {
-      const G = ra ? geos[ra.index] : rb ? geos[rb.index] : shell;
+      const G = shell;
       const top = y0 + opening.h;
       if (orient === 'h') G.box('crown:plaster', s0, top, line - WT, s1, top + 0.02, line + WT, 1, { '+y': 1 });
       else G.box('crown:plaster', line - WT, top, s0, line + WT, top + 0.02, s1, 1, { '+y': 1 });
@@ -389,7 +389,7 @@ export class Level {
       }
     }
     // end posts close T-junction gaps
-    const G = ra ? geos[ra.index] : shell;
+    const G = shell;
     const pH = FH;
     for (const s of [s0, s1]) {
       if (orient === 'h') G.box('crown:plaster', s - WT, y0, line - WT, s + WT, y0 + pH, line + WT, 1, { '-y': 1 });

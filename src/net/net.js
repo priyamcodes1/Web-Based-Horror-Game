@@ -25,6 +25,14 @@ const PEER_OPTS = {
   },
 };
 
+// ?peer=host:port points at a self-hosted PeerJS server (local testing / private deployments)
+function peerOpts() {
+  const q = new URLSearchParams(location.search).get('peer');
+  if (!q) return PEER_OPTS;
+  const [host, port] = q.split(':');
+  return { ...PEER_OPTS, host, port: +(port || 9000), path: '/', secure: location.protocol === 'https:' && host !== 'localhost' };
+}
+
 export class Net {
   constructor() {
     this.peer = null;
@@ -58,7 +66,7 @@ export class Net {
     return new Promise((resolve, reject) => {
       const tryCode = (attempt) => {
         const code = makeCode();
-        const peer = new Peer(PREFIX + code, PEER_OPTS);
+        const peer = new Peer(PREFIX + code, peerOpts());
         let done = false;
         peer.on('open', (id) => {
           done = true;
@@ -85,7 +93,7 @@ export class Net {
   join(code) {
     code = code.trim().toUpperCase();
     return new Promise((resolve, reject) => {
-      const peer = new Peer(PEER_OPTS);
+      const peer = new Peer(peerOpts());
       const timer = setTimeout(() => { peer.destroy(); reject(new Error('Timed out. Check the room code.')); }, 15000);
       peer.on('open', (id) => {
         this.peer = peer; this.myId = id; this.isHost = false; this.code = code;

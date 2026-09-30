@@ -42,7 +42,7 @@ export class HUD {
   }
 
   objectives(list) {
-    const html = '<h4>OBJECTIVES</h4>' + list.map((o) => `<div class="${o.done ? 'done' : ''}">${o.done ? '✓' : '•'} ${o.text}</div>`).join('');
+    const html = '<h4>OBJECTIVES</h4>' + list.map((o) => `<div class="${o.done ? 'done' : ''}${o.sub ? ' sub' : ''}">${o.sub ? '–' : o.done ? '✓' : '•'} ${o.text}</div>`).join('');
     this.set('obj', html, (v) => { this.e.objective.innerHTML = v; this.e['tab-objectives'].innerHTML = v; });
   }
 
@@ -109,7 +109,7 @@ export class HUD {
 
   talk(on) { this.set('talk', on, (v) => this.e.talk.classList.toggle('on', v)); }
 
-  letterbox(on) { this.e.letterbox.classList.toggle('on', on); }
+  letterbox(on) { this.e.letterbox.classList.toggle('on', on); this.el.classList.toggle('cine', on); }
   fade(on, secs = 1) { this.e.fade.style.transitionDuration = secs + 's'; this.e.fade.classList.toggle('on', on); }
   clickToPlay(on) { this.e['click-to-play'].classList.toggle('on', on); }
 

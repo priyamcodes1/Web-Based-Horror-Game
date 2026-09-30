@@ -95,13 +95,13 @@ function dustPoints(n) {
         float cone = smoothstep(0.82, 0.93, dot(d / dl, uDir));
         vB = cone * smoothstep(9.0, 1.0, dl) * smoothstep(0.3, 0.9, dl);
         vec4 mv = viewMatrix * vec4(p, 1.0);
-        gl_PointSize = uPx * 2.2 / -mv.z * 1.5 + 1.0;
+        gl_PointSize = clamp(uPx * 2.6 / -mv.z, 1.0, 6.0 * uPx);
         gl_Position = projectionMatrix * mv;
       }`,
     fragmentShader: /* glsl */`
       uniform float uOn; varying float vB;
       void main() { float r = length(gl_PointCoord - 0.5); if (r > 0.5 || vB * uOn < 0.01) discard;
-        gl_FragColor = vec4(vec3(1.0, 0.95, 0.85) * vB * uOn * 0.55 * (1.0 - r * 2.0), 1.0); }`,
+        gl_FragColor = vec4(vec3(1.0, 0.95, 0.85) * vB * uOn * 0.3 * (1.0 - r * 2.0), 1.0); }`,
   });
   const pts = new THREE.Points(g, m);
   pts.frustumCulled = false;
@@ -143,7 +143,7 @@ export class LocalPlayer {
     const cam = this.camera;
     cam.rotation.order = 'YXZ';
     const q = quality();
-    this.flash = new THREE.SpotLight(0xfff1d8, 55, 30, 0.54, 0.5, 1.5);
+    this.flash = new THREE.SpotLight(0xfff1d8, 150, 34, 0.6, 0.55, 1.4);
     this.flash.castShadow = true;
     this.flash.shadow.mapSize.set(q.shadowSize, q.shadowSize);
     this.flash.shadow.camera.near = 0.15;
@@ -384,7 +384,9 @@ export class LocalPlayer {
     if (this.flashOn && bat < 12) fl *= (Math.random() < 0.08 ? 0.1 : 0.55 + bat / 30);
     if (this.flashOn && this.game.ghostNear > 0.5 && Math.random() < this.game.ghostNear * 0.12) fl *= 0.05;
     this.flashLevel = fl;
-    this.flash.intensity = 55 * fl;
+    // eye adaptation: surfaces right in front of the lens don't blow out to white
+    this.flashNear = damp(this.flashNear ?? 1, clamp((this._hitD ?? 5) / 2.2, 0.3, 1), 8, dt);
+    this.flash.intensity = 150 * fl * this.flashNear;
     this.flash.visible = true;
     // volumetric beam and dust are only visible in dark areas
     const dark = 1 - clamp(this.game.world.lightAt(cam.position) * 1.4, 0, 0.8);
@@ -395,11 +397,18 @@ export class LocalPlayer {
     this.beam.visible = fl > 0.01 && !this.hiding;
     const du = this.dust.material.uniforms;
     du.uCam.value.copy(cam.position); du.uDir.value.copy(this.flashDir); du.uOrg.value.copy(org);
-    du.uTime.value = t; du.uOn.value = fl * dark; du.uPx.value = this.game.renderer.r.getPixelRatio() * innerHeight * 0.02;
+    du.uTime.value = t; du.uOn.value = fl * dark; du.uPx.value = this.game.renderer.r.getPixelRatio() * innerHeight / 720;
     // bounce: where the beam hits (cheap fake GI)
-    const hitD = this.game.rayDist(org, this.flashDir, 12);
+    let hitD = this.game.rayDist(org, this.flashDir, 12);
+    for (const g of this.game.ghosts) {
+      if (g.dissolve > 0.9) continue;
+      const to = g.pos.clone().setY(g.pos.y + 1.3).sub(org);
+      const d = to.length();
+      if (d < hitD && to.normalize().dot(this.flashDir) > 0.85) hitD = d;
+    }
+    this._hitD = hitD;
     this.bounce.position.copy(org).addScaledVector(this.flashDir, Math.max(0.3, hitD - 0.4));
-    this.bounce.intensity = fl * 1.2 * clamp(1.4 - hitD / 10, 0.1, 1);
+    this.bounce.intensity = fl * 3.5 * clamp(1.4 - hitD / 10, 0.1, 1);
     // audio listener
     audio.updateListener(cam.position, fwd, u);
   }
@@ -421,8 +430,11 @@ export class LocalPlayer {
     b.play(anim, { fade: 0.2 });
     b.setSpeed(sp);
     b.aim.dir.copy(this.flashDir);
+    const sel = this.game.inv[this.game.sel];
+    b.setHeld(sel ? sel.type : null, sel ? this.game.itemModel(sel.type) : null);
+    b.useT = Math.max(0, (b.useT || 0) - dt * 2);
     b.update(dt);
-    b.setFlashlightOn(this.flashLevel > 0.1);
+    b.setFlashlightOn(this.flashLevel > 0.1, 1.2);
   }
 
   // ------------------------------------------------------------------------ actions

@@ -96,9 +96,10 @@ class RemotePlayer {
     if (this.spot) {
       const tip = av.attach.flashTip || av.attach.flashlight;
       if (tip) tip.getWorldPosition(this.spot.position); else this.spot.position.copy(r.eye);
+      this.spot.angle = 0.6; this.spot.penumbra = 0.55;
       this.spot.target.position.copy(this.spot.position).addScaledVector(r.flashDir, 5);
       this.spot.target.updateMatrixWorld();
-      this.spot.intensity = r.flashOn ? 40 : 0;
+      this.spot.intensity = r.flashOn ? 110 : 0;
     }
     // their footsteps, spatialised
     const moved = this.lastPos.distanceTo(r.pos);
@@ -914,6 +915,8 @@ export class Game {
     this.local.controlLocked = true;
   }
 
+  itemModel(type) { return ITEMS[type] ? ITEMS[type].model : null; }
+
   count(type) { return this.inv.reduce((n, s) => n + (s && s.type === type ? s.count : 0), 0); }
 
   _consume(type) {
@@ -927,6 +930,7 @@ export class Game {
     const s = this.inv[this.sel];
     if (!s) return;
     const L = this.local;
+    L.body.useT = 1;
     switch (s.type) {
       case 'medkit':
         if (L.health >= 100) { this.hud.notify('You are not hurt', 1.5); return; }
@@ -1100,10 +1104,12 @@ export class Game {
     else {
       list.push({ text: o.seenGate ? 'The front gate is chained — three padlocks' : 'Find a way out of the house', done: false });
       if (!o.power) list.push({ text: o.outage && !o.fuse ? 'Restore the power — find a fuse for the generator room' : 'Reset the breaker in the generator room', done: false });
-      list.push({ text: `Find the keys (${nk}/3)`, done: nk === 3 });
-      if (!o.keys.iron) list.push({ text: 'The iron key — somewhere behind a bolted door', done: false });
-      if (!o.keys.silver) list.push({ text: 'The silver key — kept with The Collection', done: false });
-      if (!o.keys.brass) list.push({ text: 'The brass key — tucked away in a drawer upstairs', done: false });
+      list.push({ text: `Find the three keys (${nk}/3)`, done: nk === 3 });
+      if (o.seenGate || nk > 0) {
+        if (!o.keys.iron) list.push({ text: 'iron — behind a bolted door', sub: true });
+        if (!o.keys.silver) list.push({ text: 'silver — kept with The Collection', sub: true });
+        if (!o.keys.brass) list.push({ text: 'brass — in a drawer upstairs', sub: true });
+      }
       if (nk > 0) list.push({ text: `Unlock the gate (${3 - locks}/3 padlocks)`, done: locks === 0 });
       if (locks === 0) list.push({ text: 'Open the gate and escape', done: false });
     }
@@ -1511,7 +1517,7 @@ export class Game {
     u.uVignette.value = 0.3 + (L.hiding ? 0.6 : 0) + (me.alive ? (1 - L.health / 100) * 0.4 : 0);
     if (this.phase === 'play') u.uFlash.value = damp(u.uFlash.value, this.world.flashLevel * 0.04, 20, dt);
     this.renderer.r.toneMappingExposure = this.obj.power ? 1.0 : 1.12;
-    this.ambient.intensity = (this.obj.power ? 0.05 : 0.03) + this.world.flashLevel * 0.25;
+    this.ambient.intensity = (this.obj.power ? 0.1 : 0.035) + this.world.flashLevel * 0.25;
     this.moon.intensity = 0.1 + this.world.flashLevel * 1.5;
     // audio mix
     if (audio.ready) {

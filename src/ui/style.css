@@ -193,6 +193,7 @@ kbd { font-family: var(--ui); background: #1d1414; border: 1px solid #4a3a36; bo
 
 /* ------------------------------------------------------------------ HUD */
 #hud { pointer-events: none; z-index: 20; }
+#hud.cine > :not(.letterbox):not(.fade):not(.death):not(.subtitle):not(.notify):not(.vignette):not(.damage) { opacity: 0 !important; transition: opacity .6s; }
 #hud .spectate button, #hud .note { pointer-events: auto; }
 .vignette { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, .75) 100%); transition: opacity .4s; }
 .damage { position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 35%, rgba(140, 0, 0, .75) 100%); opacity: 0; transition: opacity .15s; }
@@ -201,7 +202,9 @@ kbd { font-family: var(--ui); background: #1d1414; border: 1px solid #4a3a36; bo
 .prompt { position: absolute; left: 50%; top: 56%; transform: translateX(-50%); font-family: var(--type); font-size: 15px; letter-spacing: .06em; text-shadow: 0 0 6px #000, 0 0 2px #000; opacity: 0; transition: opacity .15s; white-space: nowrap; }
 .prompt.on { opacity: 1; }
 .prompt kbd { margin-right: 6px; }
-.objective { position: absolute; left: 28px; top: 24px; max-width: 380px; font-family: var(--type); font-size: 15px; line-height: 1.5; text-shadow: 0 0 6px #000; }
+.objective { position: absolute; left: 26px; top: 22px; max-width: 340px; font-family: var(--type); font-size: 13px; line-height: 1.45; text-shadow: 0 0 6px #000, 0 0 2px #000; opacity: .82; }
+.objective div { padding-left: 2px; }
+.objective .sub { color: var(--bone-dim); font-size: 12px; padding-left: 14px; }
 .objective h4 { margin: 0 0 4px; font-family: var(--fell); letter-spacing: .15em; font-weight: 400; font-size: 12px; color: var(--blood-hi); }
 .objective .done { text-decoration: line-through; color: var(--bone-dim); }
 .notify { position: absolute; left: 50%; top: 16%; transform: translateX(-50%); text-align: center; font-family: var(--fell); font-size: 26px; letter-spacing: .08em; text-shadow: 0 0 14px #000, 0 0 30px rgba(0,0,0,.8); opacity: 0; transition: opacity .6s; white-space: nowrap; }

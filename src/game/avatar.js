@@ -89,7 +89,13 @@ export class Avatar {
     this.actions = {};
     this.current = null;
     this.bones = {};
+    // three.js strips '.' from node names (hand.R -> handR); index both spellings
     root.traverse((o) => { if (o.isBone) this.bones[o.name] = o; });
+    for (const n of ['hand.R', 'hand.L', 'forearm.R', 'forearm.L', 'upper_arm.R', 'upper_arm.L', 'clav.R', 'clav.L', 'thigh.L', 'thigh.R',
+      'f0.0.R', 'f1.0.R', 'f2.0.R', 'f3.0.R', 'thumb.0.R']) {
+      const k = n.replace(/[.[\]:/]/g, '');
+      if (!this.bones[n] && this.bones[k]) this.bones[n] = this.bones[k];
+    }
     this.meshes = [];
     root.traverse((o) => { if (o.isSkinnedMesh) this.meshes.push(o); });
     this.dissolveU = { uDissolve: { value: 0 }, uGlow: { value: 0 } };
@@ -223,6 +229,34 @@ export class Avatar {
     aimBone(b['hand.R'], dir, w);
     // keep the fingers wrapped: small curl on each finger root
     for (const f of ['f0.0.R', 'f1.0.R', 'f2.0.R', 'f3.0.R']) if (b[f]) b[f].rotation.x += 0.9 * w;
+    // left hand brings the selected item into view
+    if (this.held && b['upper_arm.L']) {
+      const lt = chest.clone().addScaledVector(dir, 0.4).addScaledVector(right, -0.17).add(new THREE.Vector3(0, -0.12 + (this.useT || 0) * 0.12, 0));
+      const shL = b['upper_arm.L'].getWorldPosition(new THREE.Vector3());
+      const elL = shL.clone().lerp(lt, 0.5).addScaledVector(right, -0.06).add(new THREE.Vector3(0, -0.12, 0));
+      aimBone(b['upper_arm.L'], elL.sub(shL), 1);
+      const eL = b['forearm.L'].getWorldPosition(new THREE.Vector3());
+      aimBone(b['forearm.L'], lt.clone().sub(eL), 1);
+      aimBone(b['hand.L'], dir.clone().add(new THREE.Vector3(0, 0.3, 0)).normalize(), 1);
+    }
+  }
+
+  /** Put an item model in the left hand (null clears). */
+  setHeld(type, modelName) {
+    if (this.heldType === type) return;
+    this.heldType = type;
+    if (this.held) { this.held.removeFromParent(); this.held = null; }
+    const hand = this.bones['hand.L'];
+    if (!type || !modelName || !hand) return;
+    const m = cloneProp('items', modelName); applyLibrary(m, { cast: false });
+    m.traverse((o) => { if (o.isMesh) { o.frustumCulled = false; o.castShadow = false; } });
+    const holder = new THREE.Group();
+    holder.add(m);
+    m.rotation.set(-Math.PI / 2, 0, 0);
+    m.position.set(0.0, 0.08, 0.03);
+    if (type === 'crowbar') { m.rotation.set(0, 0, 0); m.position.set(0, 0.09, 0.02); }
+    hand.add(holder);
+    this.held = holder;
   }
 
   _lookAt(target) {
@@ -245,10 +279,10 @@ export class Avatar {
     this.root.visible = v < 0.99;
   }
 
-  setFlashlightOn(on) {
+  setFlashlightOn(on, glow = 3) {
     const fl = this.attach.flashlight;
     if (!fl) return;
-    fl.traverse((o) => { if (o.isMesh && /bulb/.test(o.material.name)) o.material.emissiveIntensity = on ? 3 : 0; });
+    fl.traverse((o) => { if (o.isMesh && /bulb/.test(o.material.name)) o.material.emissiveIntensity = on ? glow : 0; });
   }
 
   dispose() {

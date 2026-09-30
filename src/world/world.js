@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { Level, FH, CEIL, WT, C } from './level.js';
 import { Furnisher, RECIPES } from './furnish.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { pbr, cloneProp, applyLibrary, libMaterial, emissive, assets } from '../core/assets.js';
 import { quality } from '../core/settings.js';
 import { RNG } from '../core/util.js';
@@ -54,7 +55,8 @@ export function makeRainGlass() {
         vec2 uv = vW.xz * 0.0 + vec2(vUv.x * 1.4, vUv.y * 2.0);
         vec2 a = drops(uv, uTime, 9.0);
         vec2 b = drops(uv * 1.7 + 3.1, uTime * 1.2, 14.0);
-        float stat = step(0.93, h2(floor(uv * 60.0))) * 0.6;      // tiny static beads (humidity)
+        vec2 bg = uv * 34.0; vec2 bc = fract(bg) - 0.5; float bh = h2(floor(bg));
+        float stat = step(0.82, bh) * smoothstep(0.2, 0.05, length(bc + (vec2(h2(floor(bg) + 3.1), h2(floor(bg) + 7.7)) - 0.5) * 0.5)) * 0.5;   // round condensation beads
         float wet = clamp(a.x + b.x * 0.7 + stat, 0.0, 1.0);
         float trail = a.y + b.y;
         // misty glass: haze + fogging near the frame edges
@@ -410,7 +412,38 @@ export class World {
     const gx = W + 7, gz = D * 0.3;
     for (let i = 0; i < 14; i++) place('Gravestone' + (i % 3), gx + (i % 4) * 1.6 + rng.range(-0.3, 0.3), gz + Math.floor(i / 4) * 2.2 + rng.range(-0.3, 0.3), rng.range(-0.2, 0.2) + Math.PI / 2);
     place('Fountain', L.gate.x, -9, 0, 0.8);
+    this._mergeGroup(out);
     this.scene.add(out);
+  }
+
+  /** Collapse a static group into one mesh per material (dozens of trees/fence posts -> a handful of draws). */
+  _mergeGroup(group) {
+    group.updateMatrixWorld(true);
+    const byMat = new Map();
+    const keep = [];
+    group.traverse((o) => {
+      if (!o.isMesh) return;
+      if (o.geometry.attributes.position.count > 200000) { keep.push(o); return; }
+      const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+      g.applyMatrix4(o.matrixWorld);
+      for (const k of Object.keys(g.attributes)) if (!['position', 'normal', 'uv'].includes(k)) g.deleteAttribute(k);
+      if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+      if (!g.attributes.normal) g.computeVertexNormals();
+      if (!byMat.has(o.material)) byMat.set(o.material, []);
+      byMat.get(o.material).push(g);
+    });
+    group.clear();
+    for (const o of keep) group.add(o);
+    for (const [m, list] of byMat) {
+      const merged = mergeGeometries(list, false);
+      list.forEach((g) => g.dispose());
+      if (!merged) continue;
+      merged.computeBoundingSphere();
+      const mesh = new THREE.Mesh(merged, m);
+      mesh.receiveShadow = true;
+      mesh.matrixAutoUpdate = false;
+      group.add(mesh);
+    }
   }
 
   // ------------------------------------------------------------------------ items
@@ -595,7 +628,7 @@ export class World {
         if (d > maxD) continue;
         // prefer lights in rooms we can see into (same room or LOS through doors)
         const vis = this.level.los(cam, s.pos) ? 0 : 6;
-        cand.push({ s, score: d + vis - s.intensity * 0.15 });
+        cand.push({ s, score: d + vis - Math.sqrt(s.intensity) * 0.6 });
       }
       cand.sort((a, b) => a.score - b.score);
       const want = new Set(cand.slice(0, pool.slots.length).map((c) => c.s));
@@ -627,19 +660,53 @@ export class World {
     }
   }
 
+  /**
+   * Portal visibility: a room is drawn only if the camera can see into it through a chain of open doorways
+   * (closed doors, walls and the other storey hide everything behind them). Doors, items and the grounds
+   * outside are culled with the rooms they belong to.
+   */
   _cullRooms(cam, layer) {
     const L = this.level;
-    const s = L.stairs;
-    const inStair = s && cam.x > s.x - 1 && cam.x < s.x + s.w + 1 && cam.z > s.z - 1 && cam.z < s.z + s.d + 1;
     const dd = quality().drawDistance;
-    for (const r of L.rooms) {
-      let vis = r.layers.includes(layer) || inStair || r.type === 'stairs';
-      if (vis) {
-        const dx = Math.max(r.x - cam.x, 0, cam.x - (r.x + r.w)), dz = Math.max(r.z - cam.z, 0, cam.z - (r.z + r.d));
-        if (dx * dx + dz * dz > dd * dd) vis = false;
+    const start = L.roomAt(cam.x, cam.z, layer) || L.roomAt(cam.x, cam.z, 1 - layer);
+    const seen = this._seen || (this._seen = new Set());
+    seen.clear();
+    if (!start) { for (const r of L.rooms) seen.add(r); }
+    else {
+      const q = [[start, 0]];
+      seen.add(start);
+      while (q.length) {
+        const [r, depth] = q.shift();
+        if (depth >= 4) continue;
+        for (const d of r.doors) {
+          if (d.kind === 'gate') continue;
+          const passable = d.kind === 'arch' || d.open || d.angle > 0.02 || (d.kind === 'vent' && !d.barricaded);
+          if (!passable) continue;
+          const o = d.a === r ? d.b : d.a;
+          if (!o || seen.has(o)) continue;
+          const dx = Math.max(o.x - cam.x, 0, cam.x - (o.x + o.w)), dz = Math.max(o.z - cam.z, 0, cam.z - (o.z + o.d));
+          if (dx * dx + dz * dz > dd * dd) continue;
+          seen.add(o);
+          q.push([o, depth + 1]);
+        }
       }
-      r.group.visible = vis;
+      // the stairwell connects both storeys: from inside it, both landings are visible
+      if (start.type === 'stairs') for (const d of start.doors) { const o = d.a === start ? d.b : d.a; if (o && (d.open || d.kind === 'arch')) seen.add(o); }
     }
+    for (const r of L.rooms) r.group.visible = seen.has(r);
+    this.visibleRooms = seen;
+    for (const d of L.doors) if (d.group) d.group.visible = seen.has(d.a) || (d.b && seen.has(d.b)) || d.kind === 'gate' && seen.has(d.a);
+    for (const it of this.items) {
+      if (it.taken || it.drawer) continue;
+      const r = it.room;
+      const dx = it.obj.position.x - cam.x, dz = it.obj.position.z - cam.z;
+      it.obj.visible = (!r || seen.has(r)) && dx * dx + dz * dz < 400;
+    }
+    // grounds are only visible through windows: skip them for window-less interiors
+    let win = false;
+    for (const r of seen) if (r.windows.length) { win = true; break; }
+    if (this.outside) this.outside.visible = win || !start;
+    if (this.rain) this.rain.visible = win || !start;
   }
 
   /** Light level at a point (0..1): used by ghost perception and fear. */
@@ -654,7 +721,7 @@ export class World {
       if (d2 > s.range * s.range) continue;
       const k = s.kind === 'electric' ? elec : 1;
       if (k <= 0) continue;
-      v += s.intensity * k * 0.12 / (1 + d2 * 0.5);
+      v += s.intensity * k * 0.045 / (1 + d2 * 0.5);
     }
     return Math.min(1, v);
   }
