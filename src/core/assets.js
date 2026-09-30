@@ -27,15 +27,39 @@ export const TEXTURE_SETS = [
   'rug_persian', 'ground_mud', 'gravel', 'asphalt', 'roof_slate', 'bark', 'paper',
 ];
 
-function loadTex(url, srgb) {
-  return new Promise((res) => {
-    texLoader.load(url, (t) => {
-      t.wrapS = t.wrapT = THREE.RepeatWrapping;
-      t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
-      t.anisotropy = Math.min(quality().anisotropy, assets.renderer ? assets.renderer.capabilities.getMaxAnisotropy() : 4);
-      res(t);
-    }, undefined, () => res(null));
-  });
+const MAX_TEX = { low: 512, medium: 1024, high: 2048, max: 4096 };
+
+/** Decode off the main thread (createImageBitmap) and cap resolution per quality preset. */
+async function loadTex(url, srgb) {
+  const finish = (t) => {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+    t.anisotropy = Math.min(quality().anisotropy, assets.renderer ? assets.renderer.capabilities.getMaxAnisotropy() : 4);
+    t.generateMipmaps = true;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+    t.needsUpdate = true;
+    return t;
+  };
+  try {
+    if (typeof createImageBitmap !== 'function') throw new Error('no ImageBitmap');
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const probe = await createImageBitmap(blob);
+    const cap = Math.min(quality().texRes * 2, MAX_TEX[quality().label.toLowerCase()] || 2048);
+    let bmp;
+    const pw = probe.width, ph = probe.height;
+    if (pw > cap) {
+      bmp = await createImageBitmap(blob, { resizeWidth: Math.round(cap), resizeHeight: Math.round(ph * cap / pw), resizeQuality: 'high' });
+      probe.close();
+    } else bmp = probe;
+    // glTF convention (flipY = false) everywhere: the level builder emits V-flipped UVs to match
+    const t = new THREE.Texture(bmp);
+    t.flipY = false;
+    return finish(t);
+  } catch (_) {
+    return new Promise((res) => texLoader.load(url, (t) => { t.flipY = false; res(finish(t)); }, undefined, () => res(null)));
+  }
 }
 
 export async function loadTextureSet(name) {
@@ -55,11 +79,13 @@ export async function loadImageTexture(name) {
   return t;
 }
 
+const inflight = {};
 export function loadGLTF(name) {
   if (assets.gltf[name]) return Promise.resolve(assets.gltf[name]);
-  return new Promise((res, rej) => {
-    gltfLoader.load(`/models/${name}.glb`, (g) => { assets.gltf[name] = g; res(g); }, undefined, rej);
-  });
+  // one request per model even when the menu thumbnails and the game ask at the same time
+  return (inflight[name] ||= new Promise((res, rej) => {
+    gltfLoader.load(`/models/${name}.glb`, (g) => { assets.gltf[name] = g; delete inflight[name]; res(g); }, undefined, (e) => { delete inflight[name]; rej(e); });
+  }));
 }
 
 /** Standard PBR material from a texture set. */
@@ -140,7 +166,7 @@ export function libMaterial(mname, original) {
     case 'bulb':
       return (emissive.bulb ||= plain('bulb', { color: 0xfff2d8, emissive: 0xffc27a, emissiveIntensity: 3, roughness: 0.3 }));
     case 'flame':
-      return (emissive.flame ||= plain('flame', { color: 0xffa640, emissive: 0xff9a30, emissiveIntensity: 5, transparent: true, opacity: 0.9, depthWrite: false }, THREE.MeshBasicMaterial));
+      return (emissive.flame ||= plain('flame', { color: new THREE.Color(0xffa640).multiplyScalar(4), transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending }, THREE.MeshBasicMaterial));
     case 'ember':
       return (emissive.ember ||= plain('ember', { color: 0x2a0a02, emissive: 0xff3a0a, emissiveIntensity: 2.5, roughness: 0.9 }));
     case 'window_glow':
