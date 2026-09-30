@@ -1,0 +1,19 @@
+{
+  "name": "blackwood-manor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Blackwood Manor - a realistic multiplayer browser horror game (Three.js + WebRTC)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "peerjs": "^1.5.5",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "vite": "^8.3.1"
+  }
+}

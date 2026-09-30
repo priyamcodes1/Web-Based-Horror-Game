@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <title>Blackwood Manor</title>
+  <meta name="description" content="A multiplayer horror game. Survive the manor. Find the keys. Escape." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;800&family=IM+Fell+English+SC&family=Special+Elite&family=UnifrakturMaguntia&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/ui/style.css" />
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <!-- ============================== MENU LAYER ============================== -->
+  <div id="menu" class="screen active">
+    <canvas id="menu-bg"></canvas>
+    <div class="web web-tl"></div>
+    <div class="web web-tr"></div>
+    <div class="spider"><span class="thread"></span><span class="body"></span></div>
+    <div class="grain"></div>
+
+    <!-- main -->
+    <section id="m-main" class="panel active">
+      <h1 class="title" data-text="Blackwood">Blackwood<span class="sub">— MANOR —</span></h1>
+      <p class="tagline">Nobody leaves the house before dawn.</p>
+      <nav class="btn-col">
+        <button class="bb" data-go="m-play"><i class="drop"></i><span>Play</span></button>
+        <button class="bb" data-go="m-settings"><i class="drop"></i><span>Settings</span></button>
+        <button class="bb" data-go="m-controls"><i class="drop"></i><span>Controls</span></button>
+        <button class="bb" data-go="m-credits"><i class="drop"></i><span>Credits</span></button>
+      </nav>
+      <div class="ver">v1.0 · WebGL2 · <span id="gpu-name"></span></div>
+    </section>
+
+    <!-- play setup -->
+    <section id="m-play" class="panel wide">
+      <header class="ph"><button class="back" data-go="m-main">‹ Back</button><h2>Into the Dark</h2></header>
+      <div class="play-grid">
+        <div class="col">
+          <h3>Mode</h3>
+          <div class="seg" id="mode-seg">
+            <button data-v="solo" class="on">Solo</button><button data-v="host">Host Online</button><button data-v="join">Join Online</button>
+          </div>
+          <label class="field"><span>Your name</span><input id="in-name" maxlength="16" placeholder="Survivor" autocomplete="off" /></label>
+          <div id="join-box" class="hidden">
+            <label class="field"><span>Room code</span><input id="in-code" maxlength="6" placeholder="ABCD" autocomplete="off" /></label>
+          </div>
+          <h3>Survivor</h3>
+          <div class="profiles" id="profiles"></div>
+        </div>
+        <div class="col host-only">
+          <h3>Map</h3>
+          <div class="maps" id="maps"></div>
+          <h3>Ghosts <small id="ghost-count-label">1</small></h3>
+          <div class="seg" id="ghost-count"><button data-v="1" class="on">1</button><button data-v="2">2</button><button data-v="3">3</button></div>
+          <div class="ghosts" id="ghosts"></div>
+          <div class="row2">
+            <div><h3>Lives</h3><div class="stepper" id="lives"><button data-d="-1">−</button><b>3</b><button data-d="1">+</button></div></div>
+            <div><h3>Difficulty</h3><div class="seg" id="difficulty"><button data-v="easy">Easy</button><button data-v="normal" class="on">Normal</button><button data-v="nightmare">Nightmare</button></div></div>
+          </div>
+        </div>
+      </div>
+      <footer class="pf"><button class="bb big" id="btn-start"><i class="drop"></i><span>Enter the Manor</span></button></footer>
+    </section>
+
+    <!-- lobby -->
+    <section id="m-lobby" class="panel">
+      <header class="ph"><button class="back" id="lobby-leave">‹ Leave</button><h2>Lobby</h2></header>
+      <div class="lobby-code">Room code <b id="lobby-code">----</b> <button class="mini" id="copy-code">copy</button></div>
+      <p class="hint" id="lobby-hint">Share the code with friends. The host starts the game.</p>
+      <ul class="lobby-list" id="lobby-list"></ul>
+      <div class="lobby-cfg" id="lobby-cfg"></div>
+      <footer class="pf"><button class="bb big" id="btn-lobby-start"><i class="drop"></i><span>Start Game</span></button></footer>
+    </section>
+
+    <!-- settings -->
+    <section id="m-settings" class="panel">
+      <header class="ph"><button class="back" data-back>‹ Back</button><h2>Settings</h2></header>
+      <div class="settings">
+        <h3>Graphics</h3>
+        <div class="seg" id="quality"><button data-v="low">Low</button><button data-v="medium">Medium</button><button data-v="high">High</button><button data-v="max">Max</button></div>
+        <p class="hint" id="quality-hint"></p>
+        <label class="rng"><span>Brightness</span><input type="range" id="s-brightness" min="0.6" max="1.6" step="0.01" /><em></em></label>
+        <label class="rng"><span>Field of view</span><input type="range" id="s-fov" min="60" max="100" step="1" /><em></em></label>
+        <h3>Audio</h3>
+        <label class="rng"><span>Master</span><input type="range" id="s-master" min="0" max="1" step="0.01" /><em></em></label>
+        <label class="rng"><span>Music</span><input type="range" id="s-music" min="0" max="1" step="0.01" /><em></em></label>
+        <label class="rng"><span>Effects</span><input type="range" id="s-sfx" min="0" max="1" step="0.01" /><em></em></label>
+        <label class="rng"><span>Voices</span><input type="range" id="s-voice" min="0" max="1" step="0.01" /><em></em></label>
+        <h3>Controls</h3>
+        <label class="rng"><span>Mouse sensitivity</span><input type="range" id="s-sensitivity" min="0.2" max="3" step="0.01" /><em></em></label>
+        <label class="chk"><input type="checkbox" id="s-invertY" /><span>Invert Y</span></label>
+        <label class="chk"><input type="checkbox" id="s-headBob" /><span>Head bob</span></label>
+        <label class="chk"><input type="checkbox" id="s-subtitles" /><span>Subtitles</span></label>
+        <label class="chk"><input type="checkbox" id="s-showFps" /><span>Show FPS</span></label>
+        <label class="chk"><input type="checkbox" id="s-voiceChat" /><span>Proximity voice chat (hold V)</span></label>
+      </div>
+    </section>
+
+    <!-- controls -->
+    <section id="m-controls" class="panel">
+      <header class="ph"><button class="back" data-go="m-main">‹ Back</button><h2>Controls</h2></header>
+      <table class="keys">
+        <tr><td><kbd>W A S D</kbd></td><td>Move</td></tr>
+        <tr><td><kbd>Shift</kbd></td><td>Sprint (uses stamina)</td></tr>
+        <tr><td><kbd>C</kbd></td><td>Crouch · while sprinting: Slide (speed boost)</td></tr>
+        <tr><td><kbd>E</kbd></td><td>Interact · open · pick up · hide</td></tr>
+        <tr><td><kbd>F</kbd></td><td>Flashlight</td></tr>
+        <tr><td><kbd>R</kbd></td><td>Replace flashlight battery</td></tr>
+        <tr><td><kbd>Q</kbd> / <kbd>LMB</kbd></td><td>Use held item</td></tr>
+        <tr><td><kbd>1–6</kbd> / <kbd>Wheel</kbd></td><td>Select item</td></tr>
+        <tr><td><kbd>G</kbd></td><td>Drop item</td></tr>
+        <tr><td><kbd>Space</kbd></td><td>Hold breath (while hiding)</td></tr>
+        <tr><td><kbd>Tab</kbd></td><td>Objectives &amp; map</td></tr>
+        <tr><td><kbd>V</kbd></td><td>Push-to-talk (voice chat)</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Pause</td></tr>
+      </table>
+    </section>
+
+    <!-- credits -->
+    <section id="m-credits" class="panel">
+      <header class="ph"><button class="back" data-go="m-main">‹ Back</button><h2>Credits</h2></header>
+      <div class="credits">
+        <p>Characters, props, textures &amp; animation generated in Blender by procedural scripts.</p>
+        <p>Engine: three.js · Networking: PeerJS / WebRTC</p>
+        <p class="hint">Drop your own sound files into <code>/public/audio</code> (see manifest.json) to replace the synthesized audio.</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============================== LOADING ============================== -->
+  <div id="loading" class="screen">
+    <div class="candle"><div class="flame"></div><div class="wax"></div></div>
+    <div class="load-title">Blackwood Manor</div>
+    <div class="load-bar"><div class="load-fill" id="load-fill"></div><div class="load-drip"></div></div>
+    <div class="load-stage" id="load-stage">Unlocking the front door…</div>
+    <div class="load-tip" id="load-tip"></div>
+  </div>
+
+  <!-- ============================== HUD ============================== -->
+  <div id="hud" class="screen">
+    <div class="vignette" id="fx-vignette"></div>
+    <div class="damage" id="fx-damage"></div>
+    <div class="crosshair" id="crosshair"></div>
+    <div class="prompt" id="prompt"></div>
+    <div class="objective" id="objective"></div>
+    <div class="notify" id="notify"></div>
+    <div class="subtitle" id="subtitle"></div>
+    <div class="keyring" id="keyring"></div>
+    <div class="lives" id="lives-hud"></div>
+    <div class="bars">
+      <div class="stamina"><div id="stamina-fill"></div></div>
+    </div>
+    <div class="battery" id="battery"><i></i><span>100%</span></div>
+    <div class="hotbar" id="hotbar"></div>
+    <div class="fps" id="fps"></div>
+    <div class="hide-slit" id="hide-slit"></div>
+    <div class="breath" id="breath"><div></div></div>
+    <div class="tabmap" id="tabmap"><canvas id="tabmap-canvas"></canvas><div class="tab-objectives" id="tab-objectives"></div><div class="tab-players" id="tab-players"></div></div>
+    <div class="note" id="note"><div class="paper"><h4 id="note-title"></h4><p id="note-body"></p><small>[E] close</small></div></div>
+    <div class="spectate" id="spectate"><button id="spec-prev">‹</button><div><small>Spectating</small><b id="spec-name"></b></div><button id="spec-next">›</button></div>
+    <div class="death" id="death"><h2 id="death-title">You were taken</h2><p id="death-sub"></p></div>
+    <div class="talk" id="talk">● TALKING</div>
+    <div class="letterbox" id="letterbox"><div></div><div></div></div>
+    <div class="fade" id="fade"></div>
+    <div class="click-to-play" id="click-to-play">Click to continue</div>
+  </div>
+
+  <!-- ============================== PAUSE / RESULTS ============================== -->
+  <div id="pause" class="screen overlay">
+    <div class="panel active small">
+      <h2>Paused</h2>
+      <nav class="btn-col">
+        <button class="bb" id="p-resume"><i class="drop"></i><span>Resume</span></button>
+        <button class="bb" id="p-settings"><i class="drop"></i><span>Settings</span></button>
+        <button class="bb" id="p-leave"><i class="drop"></i><span>Leave Game</span></button>
+      </nav>
+    </div>
+  </div>
+  <div id="results" class="screen overlay">
+    <div class="panel active">
+      <h2 id="res-title">You Escaped</h2>
+      <p class="hint" id="res-sub"></p>
+      <table class="stats" id="res-stats"></table>
+      <nav class="btn-col"><button class="bb" id="res-menu"><i class="drop"></i><span>Main Menu</span></button></nav>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
