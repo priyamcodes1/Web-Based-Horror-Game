@@ -43,9 +43,9 @@ export class Furnisher {
     this.dynamicObjs = [];
   }
 
-  size(name) {
+  size(name, glb = 'furniture') {
     if (this.sizeCache[name]) return this.sizeCache[name];
-    const o = cloneProp('furniture', name);
+    const o = cloneProp(glb, name);
     o.updateMatrixWorld(true);
     const b = new THREE.Box3().setFromObject(o);
     const s = { w: b.max.x - b.min.x, d: b.max.z - b.min.z, h: b.max.y - b.min.y, minX: b.min.x, maxX: b.max.x, minZ: b.min.z, maxZ: b.max.z };
@@ -115,7 +115,7 @@ export class Furnisher {
 
   /** Instantiate + register a prop at world (x,z) with yaw rot on the room's floor (or y override). */
   spawn(name, room, layer, x, z, rot, opts = {}) {
-    const obj = cloneProp('furniture', name);
+    const obj = cloneProp(opts.glb || 'furniture', name);
     applyLibrary(obj);
     const y = (opts.y ?? 0) + layer * FH;
     obj.position.set(x, y, z);
@@ -215,7 +215,7 @@ export class Furnisher {
 
   /** Free-standing placement near the room centre (or random inside), rotation given or random-ish. */
   inRoom(name, room, layer, opts = {}) {
-    const sz = this.size(name);
+    const sz = this.size(name, opts.glb);
     const sc = opts.scale ?? 1;
     for (let t = 0; t < (opts.tries ?? 40); t++) {
       const rot = opts.rot ?? (opts.alignLong ? (room.w >= room.d ? 0 : Math.PI / 2) : this.rng.pick([0, Math.PI / 2, Math.PI, -Math.PI / 2]));

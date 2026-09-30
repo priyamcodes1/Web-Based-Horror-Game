@@ -27,15 +27,41 @@ export const TEXTURE_SETS = [
   'rug_persian', 'ground_mud', 'gravel', 'asphalt', 'roof_slate', 'bark', 'paper',
 ];
 
-function loadTex(url, srgb) {
-  return new Promise((res) => {
-    texLoader.load(url, (t) => {
-      t.wrapS = t.wrapT = THREE.RepeatWrapping;
-      t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
-      t.anisotropy = Math.min(quality().anisotropy, assets.renderer ? assets.renderer.capabilities.getMaxAnisotropy() : 4);
-      res(t);
-    }, undefined, () => res(null));
-  });
+const MAX_TEX = { low: 512, medium: 1024, high: 2048, max: 4096 };
+
+/** Decode off the main thread (createImageBitmap) and cap resolution per quality preset. */
+async function loadTex(url, srgb) {
+  const finish = (t) => {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+    t.anisotropy = Math.min(quality().anisotropy, assets.renderer ? assets.renderer.capabilities.getMaxAnisotropy() : 4);
+    t.generateMipmaps = true;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+    t.needsUpdate = true;
+    return t;
+  };
+  try {
+    if (typeof createImageBitmap !== 'function') throw new Error('no ImageBitmap');
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const probe = await createImageBitmap(blob);
+    const cap = Math.min(quality().texRes * 2, MAX_TEX[quality().label.toLowerCase()] || 2048);
+    let bmp;
+    const pw = probe.width, ph = probe.height;
+    if (pw > cap) {
+      probe.close();
+      bmp = await createImageBitmap(blob, { resizeWidth: Math.round(cap), resizeHeight: Math.round(ph * cap / pw), resizeQuality: 'high', imageOrientation: 'flipY' });
+    } else {
+      probe.close();
+      bmp = await createImageBitmap(blob, { imageOrientation: 'flipY' });
+    }
+    const t = new THREE.Texture(bmp);
+    t.flipY = false; // already flipped during decode
+    return finish(t);
+  } catch (_) {
+    return new Promise((res) => texLoader.load(url, (t) => res(finish(t)), undefined, () => res(null)));
+  }
 }
 
 export async function loadTextureSet(name) {

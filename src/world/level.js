@@ -577,7 +577,7 @@ export class Level {
       if (!e) return false;
       if (!e.door) return true;
       const d = e.door;
-      if (d.kind === 'vent') return ghost;                // ghosts never crawl through vents
+      if (d.kind === 'vent') return ghost === 'vent' ? d.barricaded : (ghost ? true : d.barricaded);   // only crawlers use open vents
       if (d.kind === 'gate') return true;
       if (d.locked && d.locked !== 'open') return true;
       return !d.open && !ghost;
