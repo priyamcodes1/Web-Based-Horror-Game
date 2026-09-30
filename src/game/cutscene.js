@@ -40,8 +40,8 @@ export class EscapeCutscene {
     s.background = new THREE.Color(0x07090d);
     s.fog = new THREE.FogExp2(0x0a0d12, 0.028);
     const cam = this.camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 400);
-    s.add(new THREE.HemisphereLight(0x3a4a66, 0x0a0806, 0.35));
-    const moon = this.moon = new THREE.DirectionalLight(0x8fa6d8, 0.9);
+    s.add(new THREE.HemisphereLight(0x5a6c90, 0x141010, 0.9));
+    const moon = this.moon = new THREE.DirectionalLight(0x9fb4e8, 1.7);
     moon.position.set(-30, 40, 60);
     moon.target.position.set(0, 0, 20);
     moon.castShadow = true;
@@ -71,12 +71,25 @@ export class EscapeCutscene {
     this.mansion = place('Mansion', 0, 0, 0);
     this.doors = [];
     for (const sd of [-1, 1]) {
-      const pivot = new THREE.Group(); pivot.position.set(sd * 1.15, 0.8, 0.05);
+      const pivot = new THREE.Group(); pivot.position.set(sd * 1.15, 0.8, 0.07);
       const leaf = cloneProp('furniture', 'GateDoor'); applyLibrary(leaf);
       if (sd > 0) leaf.rotation.y = Math.PI;
       pivot.add(leaf); s.add(pivot);
       this.doors.push({ pivot, sd });
     }
+    // the façade's doorway: a warm, hazy hall seen through the opened doors
+    const cv = document.createElement('canvas'); cv.width = 64; cv.height = 128;
+    const cg = cv.getContext('2d');
+    const gr = cg.createLinearGradient(0, 128, 0, 0);
+    gr.addColorStop(0, '#6b3a16'); gr.addColorStop(0.35, '#3a1d0c'); gr.addColorStop(1, '#0c0604');
+    cg.fillStyle = gr; cg.fillRect(0, 0, 64, 128);
+    const rg = cg.createRadialGradient(32, 70, 2, 32, 70, 40);
+    rg.addColorStop(0, 'rgba(255,190,120,0.55)'); rg.addColorStop(1, 'rgba(255,190,120,0)');
+    cg.fillStyle = rg; cg.fillRect(0, 0, 64, 128);
+    const dt = new THREE.CanvasTexture(cv); dt.colorSpace = THREE.SRGBColorSpace;
+    const hall = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 2.9), new THREE.MeshBasicMaterial({ map: dt, fog: true }));
+    hall.position.set(0, 0.8 + 1.45, 0.03);
+    s.add(hall);
     // warm light spilling from the open doorway
     this.doorLight = new THREE.PointLight(0xffa860, 0, 14, 2); this.doorLight.position.set(0, 2.2, 1.5); s.add(this.doorLight);
     place('Fountain', 0, 0, 16, 0, 1);
@@ -84,6 +97,11 @@ export class EscapeCutscene {
     for (const sd of [-1, 1]) for (const z of [8, 23]) {
       place('LampPost', sd * 4.2, 0, z);
       const l = new THREE.PointLight(0xffbf70, 9, 16, 2); l.position.set(sd * 4.2, 3.4, z); s.add(l); this.lamps.push(l);
+    }
+    // street lamps along the road so the getaway is readable
+    for (const x of [1.5, -22, -46]) {
+      place('LampPost', x, 0, 39.6, 0);
+      const l = new THREE.PointLight(0xffc88a, 26, 22, 1.6); l.position.set(x, 3.4, 40.2); s.add(l);
     }
     // fence + gate
     for (let x = -46; x <= 46; x += 2.55) { if (Math.abs(x) < 3.6) continue; place('FenceSection', x, 0, 30); }
@@ -104,11 +122,14 @@ export class EscapeCutscene {
     for (const n of ['Car_HeadlightL', 'Car_HeadlightR']) {
       const e = this.car.getObjectByName(n);
       if (!e) continue;
-      const sp = new THREE.SpotLight(0xfff3d8, 0, 60, 0.42, 0.5, 1.4);
+      const sp = new THREE.SpotLight(0xfff3d8, 0, 70, 0.45, 0.5, 1.2);
       sp.position.copy(e.position); sp.target.position.copy(e.position).add(new THREE.Vector3(-10, -0.6, 0));
       this.car.add(sp, sp.target); this.heads.push(sp);
     }
     this.car.traverse((o) => { if (o.isMesh && /head|tail/.test(o.material.name)) { o.material = o.material.clone(); o.userData.lamp = true; o.material.emissiveIntensity = 0; } });
+    this.dome = new THREE.PointLight(0xffe2b0, 0, 5, 2);
+    this.dome.position.set(-0.1, 1.25, 0);
+    this.car.add(this.dome);
     // survivors
     this.runners = this.survivors.map((sv, i) => {
       const a = new Avatar('player', { profile: sv.profile });
@@ -120,7 +141,10 @@ export class EscapeCutscene {
     // a ghost watching from the doorway
     this.ghost = new Avatar(this.ghostType);
     this.ghost.setDissolve(1);
-    this.ghost.root.position.set(0, 0.8, -0.3);
+    this.ghost.root.position.set(0, 0.8, 1.1);
+    this.ghost.root.rotation.y = 0;
+    for (const m of this.ghost.meshes) if (m.material.emissive && /Eye|Pupil/.test(m.material.name)) m.material.emissiveIntensity = 9;
+    this.ghostRim = new THREE.PointLight(0x9fc0ff, 0, 5, 2); this.ghostRim.position.set(0, 2.6, 2.6); s.add(this.ghostRim);
     this.ghost.play(this.ghost.clips.Stare ? 'Stare' : 'Idle');
     s.add(this.ghost.root);
     // rain
@@ -171,6 +195,7 @@ export class EscapeCutscene {
     if (t > 6.6) this.cue('ghost', () => { audio.play(this.ghostType === 'warden' ? 'roar' : this.ghostType === 'child' ? 'giggle' : 'scream', { vol: 0.6, reverb: 0.8 }); });
     const gd = t > 6.6 ? Math.max(0, 1 - (t - 6.6) * 0.8) : 1;
     this.ghost.setDissolve(gd, gd < 1 && gd > 0 ? 0.3 : 0);
+    this.ghostRim.intensity = (1 - gd) * 4;
     this.ghost.update(dt);
     // car: door, lights, drive
     const doorOpen = smoothstep(8.4, 8.9, t) * (1 - smoothstep(10.4, 10.7, t));
@@ -179,7 +204,8 @@ export class EscapeCutscene {
     if (t > 10.6) this.cue('cardoor2', () => audio.play('car_door', { vol: 1 }));
     if (t > 11.0) this.cue('start', () => { audio.play('car_start', { vol: 1 }); });
     const lampOn = t > 11.0 ? 1 : 0;
-    for (const h of this.heads) h.intensity = 120 * lampOn;
+    for (const h of this.heads) h.intensity = 380 * lampOn;
+    this.dome.intensity = 6 * smoothstep(8.3, 8.6, t) * (1 - smoothstep(11.5, 12.5, t));
     this.car.traverse((o) => { if (o.userData.lamp) o.material.emissiveIntensity = lampOn * (/tail/.test(o.material.name) ? 2.5 : 6); });
     if (t > 12.2) this.cue('drive', () => { audio.startLoop('car', { vol: 0.8 }); });
     const td = Math.max(0, t - 12.4);

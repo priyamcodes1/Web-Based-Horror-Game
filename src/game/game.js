@@ -625,7 +625,10 @@ export class Game {
         p.caught = false; p.lives = e.lives; p.health = 100; p.hidden = false; p.hideSpot = null;
         p.pos.set(e.x, e.y, e.z);
         if (e.pid === me.id) {
-          this.local.spawn({ x: e.x, y: e.y, z: e.z, l: e.l }, this.rng.next() * 6.28);
+          // face into the room, not into the nearest wall
+          const rm = this.level.roomAt(e.x, e.z, e.l);
+          const yaw = rm ? Math.atan2(-(rm.cx - e.x), -(rm.cz - e.z)) : 0;
+          this.local.spawn({ x: e.x, y: e.y, z: e.z, l: e.l }, yaw);
           this.local.health = 100;
           this.local.controlLocked = false;
           this.caughtSeq = null;
@@ -1237,6 +1240,7 @@ export class Game {
     this.gateT = 0;
     const g = this.level.gate;
     g.locked = null;
+    for (const k of KEY_IDS) this.world.removePadlock(k);
     this.world.setDoor(g, true, new THREE.Vector3(g.x, 0, g.z + 3), false);
     audio.play('door_creak', { vol: 1, dur: 2.2 });
     audio.play('thunder', { close: true, vol: 1 });
@@ -1272,6 +1276,7 @@ export class Game {
     const survivors = this.players.filter((p) => p.alive).map((p) => ({ profile: p.profile, name: p.name }));
     if (!survivors.length) survivors.push({ profile: this.localRec.profile, name: this.localRec.name });
     this.cut = new EscapeCutscene(this, survivors, this.config.ghosts[0]).build();
+    this.renderer.r.toneMappingExposure = 1.35;
     this.renderer.setScene(this.cut.scene, this.cut.camera);
     this.renderer.u.uFlash.value = 0;
     audio.stopLoop('chase'); audio.stopLoop('heartbeat');
