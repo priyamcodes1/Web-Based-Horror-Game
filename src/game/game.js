@@ -4,7 +4,7 @@ import { settings, quality } from '../core/settings.js';
 import { input } from '../core/input.js';
 import { RNG, nextFrame } from '../core/util.js';
 import { audio } from '../audio/audio.js';
-import { assets, loadGLTF, loadTextureSet, loadImageTexture, TEXTURE_SETS, pbr, buildEnvMap, libMaterial, cloneProp, applyLibrary } from '../core/assets.js';
+import { assets, loadGLTF, loadTextureSet, loadImageTexture, TEXTURE_SETS, buildEnvMap, libMaterial, cloneProp, applyLibrary } from '../core/assets.js';
 import { MAPS, PROFILES } from '../world/maps.js';
 import { Level, FH } from '../world/level.js';
 import { Furnisher, RECIPES } from '../world/furnish.js';
@@ -18,7 +18,8 @@ import { installEvents, QUESTS } from './events.js';
 import { getGuide } from '../ui/guide.js';
 import { Ghost } from '../entities/ghost.js';
 import { Items, Interact, ITEM_DEFS } from './items.js';
-import { playCatch, playEscape, buildExterior } from './cutscene.js';
+import { playCatch } from './cutscene.js';
+import { playEscape, buildExterior } from './escape.js';
 import { makeRainGlassMaterial } from '../gfx/effects.js';
 
 const TIPS = [
@@ -87,11 +88,6 @@ export class Game {
     done = 0;
     await Promise.all(TEXTURE_SETS.map((t) => loadTextureSet(t).then(() => P(0.4 + 0.25 * (++done / TEXTURE_SETS.length), 'Hanging the wallpaper…'))));
     await Promise.all(['painting_0', 'painting_1', 'painting_2', 'painting_3', 'painting_4'].map((n) => loadImageTexture(n)));
-    this.groundMat = pbr('ground_mud', {}); this.asphaltMat = pbr('asphalt', {}); this.gravelMat = pbr('gravel', {});
-    for (const [m, rep] of [[this.groundMat, 40], [this.asphaltMat, 10], [this.gravelMat, 6]]) {
-      m.map && (m.map = m.map.clone(), m.map.repeat.set(rep, rep), m.map.needsUpdate = true);
-      for (const k of ['normalMap', 'roughnessMap', 'aoMap', 'metalnessMap']) if (m[k]) { m[k] = m[k].clone(); m[k].repeat.set(rep, rep); m[k].needsUpdate = true; }
-    }
     await nextFrame();
 
     P(0.68, 'Building the manor…');
@@ -218,6 +214,19 @@ export class Game {
       }
       if (i % 6 === 5) { P(0.955 + 0.04 * (i / rooms.length), 'Lighting the candles…'); await nextFrame(); }
     }
+    // the escape ending's set, once, from where its cameras stand (moon shadow included): no hitch when it starts
+    const X = this.exterior;
+    if (X) {
+      X.ext.visible = true; X.rain.visible = true;
+      for (const a of X.actors) a.root.visible = true;
+      if (X.moon.castShadow) X.moon.shadow.needsUpdate = true;
+      for (const [x, y, z, yaw] of [[X.gx + 2.3, 0.35, -6.3, 0.3], [X.gx, 0.8, -12, Math.PI], [X.carX - 5.5, 1.3, -34, -1.2]]) {
+        cam.position.set(x, y, z); cam.rotation.set(-0.05, yaw, 0, 'YXZ'); cam.updateMatrixWorld();
+        R.setRenderTarget(rt); R.render(this.scene, cam);
+      }
+      X.ext.visible = false; X.rain.visible = false;
+      for (const a of X.actors) { a.root.visible = false; a.torch.visible = false; }
+    }
     R.setRenderTarget(null);
     rt.dispose();
     this.scene.remove(cam);
@@ -308,10 +317,10 @@ export class Game {
     if (this.isHost) {
       const agents = this.agents();
       this.recordTrails(dt, agents);
-      if (!this.adminFreeze) for (const g of this.ghosts) g.think(dt, agents);
+      if (!this.adminFreeze && !this.escaping) for (const g of this.ghosts) g.think(dt, agents);
       else for (const g of this.ghosts) { g.speed = 0; g.moveSpeed = 0; }
       this.noiseEvents.length = 0;
-      this.directorTick(dt, agents);
+      if (!this.escaping) this.directorTick(dt, agents);
     }
     for (const g of this.ghosts) g.update(dt);
     this.updateFear(dt);
@@ -874,6 +883,9 @@ export class Game {
   async escape() {
     if (this.escaping) return;
     this.escaping = true;
+    this.hud.prompt(null);
+    if (this.bookOpen) this.closeBook();
+    if (this.hud.noteOpen) this.hud.closeNote();
     if (this.player.hiding) this.player.exitHide(true);
     for (const g of this.ghosts) { g.state = 'retreat'; g.dissolveTarget = 1; }
     audio.setLoop('chase', 0); audio.setLoop('heartbeat', 0); audio.setLoop('drone', 0.2);
@@ -946,8 +958,10 @@ export class Game {
 
   updateRemoteLights() {
     const cam = this.player.camera.position;
-    const list = [...this.avatars.entries()].filter(([id]) => this.remote.get(id)?.flashOn && this.remote.get(id)?.alive)
-      .sort((a, b) => a[1].pos.distanceTo(cam) - b[1].pos.distanceTo(cam));
+    // the escape ending: the survivors running for the car carry their torches
+    const list = this.escaping ? (this.cutsceneActors || []).filter((a) => a.torchOn && a.root.visible).map((a) => [a.id, a])
+      : [...this.avatars.entries()].filter(([id]) => this.remote.get(id)?.flashOn && this.remote.get(id)?.alive)
+        .sort((a, b) => a[1].pos.distanceTo(cam) - b[1].pos.distanceTo(cam));
     const pos = new THREE.Vector3(), dir = new THREE.Vector3();
     this.remoteLights.forEach((L, i) => {
       const e = list[i];

@@ -438,7 +438,7 @@ export class Hud {
   }
   note(n) { $('#note-title').textContent = n[0]; $('#note-body').textContent = n[1]; $('#note').classList.add('on'); this.noteOpen = true; }
   closeNote() { $('#note').classList.remove('on'); this.noteOpen = false; }
-  letterbox(on) { $('#letterbox').classList.toggle('on', on); }
+  letterbox(on) { $('#letterbox').classList.toggle('on', on); $('#hud').classList.toggle('cinema', on); }
   fade(on) { $('#fade').classList.toggle('on', on); }
   clickToPlay(on) { $('#click-to-play').classList.toggle('on', on); }
   talking(on) { $('#mic-btn').classList.toggle('talking', on); }

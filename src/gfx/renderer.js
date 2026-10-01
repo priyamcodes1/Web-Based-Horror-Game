@@ -47,6 +47,15 @@ const HorrorShader = {
     }`,
 };
 
+const SanitizeShader = {
+  uniforms: { tDiffuse: { value: null } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; varying vec2 vUv;
+    void main(){ vec4 c = texture2D(tDiffuse, vUv);
+      if (any(isnan(c)) || any(isinf(c))) c = vec4(0., 0., 0., 1.);
+      gl_FragColor = vec4(clamp(c.rgb, 0., 48.), c.a); }`,
+};
+
 export class Gfx {
   constructor(canvas) {
     this.canvas = canvas;
@@ -82,6 +91,9 @@ export class Gfx {
     this.composer = new EffectComposer(this.renderer, rt);
     this.renderPass = new RenderPass(null, null);
     this.composer.addPass(this.renderPass);
+    // a single NaN / overflowed half-float pixel (a razor-sharp highlight under a strong light) would be smeared
+    // over the whole frame by the bloom blur and turn the screen black: clamp it here, before anything spreads it
+    this.composer.addPass(new ShaderPass(SanitizeShader));
     if (q.bloom) {
       // only genuinely hot pixels (flames, bulb filaments) bloom, and only a little
       this.bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.22, 0.35, 2.2);

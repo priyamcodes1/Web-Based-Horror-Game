@@ -354,6 +354,7 @@ export class Interact {
 
   update(p) {
     const g = this.game;
+    if (g.escaping || g.cutscene) { this.cur = null; g.hud.prompt(null); return; }
     const c = this.candidates(p)[0] || null;
     this.cur = c;
     g.hud.prompt(c ? c.label : null, c && !/Locked|locked|Boarded|hums|burnt|Main gate —|no power/.test(c.label));

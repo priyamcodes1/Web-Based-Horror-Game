@@ -495,6 +495,12 @@ if (vChest > 0.45) discard;`);
 
   /** World position of the torch lens (the beam starts there). */
   tipWorld(out = new THREE.Vector3()) { return this.torchTip.getWorldPosition(out); }
+  /** Between the left thumb and index fingertips (where a pinched key sits). */
+  pinchWorld(out = new THREE.Vector3()) {
+    const B = this.bones, a = B.thumb_03_l || B.thumb_02_l, b = B.index_03_l || B.index_02_l;
+    if (!a || !b) return this.leftHandWorld(out);
+    return out.copy(a.getWorldPosition(_c)).add(b.getWorldPosition(_d)).multiplyScalar(0.5);
+  }
   leftHandWorld(out = new THREE.Vector3()) { return this.bones.hand_l.getWorldPosition(out); }
 }
 
@@ -588,6 +594,37 @@ const ACTIONS = {
       else if (t < 0.48) lerpPose(L1, L2, seg(t, 0.3, 0.46), cur.l);
       else key(cur, 'l', L2, 1 - seg(t, 0.55, 0.9));
       return { lw: t < 0.75 ? 1 : 1 - seg(t, 0.75, 0.9), leftVisible: t < 0.42 };
+    },
+  },
+  // left hand up to the padlock, key pinched between thumb and index (the cutscene moves the key with the
+  // fingertips): in, a quarter turn with the wrist, let go and back. opts.target = the keyhole, world space
+  unlock: {
+    dur: 1.45, events: [[0.92, 'apply']],
+    run(t, cur, body, A) {
+      const cam = body.p.camera;
+      const T = A.opts.target.clone().applyMatrix4(_m.copy(cam.matrixWorld).invert());
+      const F = T.clone().normalize();                                    // fingers toward the lock
+      const up = V3(0, 1, 0).addScaledVector(F, -F.y).normalize();        // index on top, thumb under: a pinch
+      A.turn = 1.4 * seg(t, 0.62, 0.9) * (1 - seg(t, 1.0, 1.15));
+      const Ax = up.applyAxisAngle(F, A.turn);
+      const ins = seg(t, 0.36, 0.56) * (1 - seg(t, 1.0, 1.2));
+      const W = T.clone().addScaledVector(F, -(0.2 - 0.035 * ins) * body.scale).addScaledVector(Ax, -0.02 * body.scale);
+      const P = pose(W.toArray(), Ax.toArray(), F.toArray(), 0.5, 0.75);
+      const k = t < 0.36 ? seg(t, 0, 0.36) : t < 1.12 ? 1 : 1 - seg(t, 1.12, 1.45);
+      key(cur, 'l', P, k);
+      return { lw: 1, leftVisible: false };
+    },
+  },
+  // both hands flat on the doors and lean in (the torch hand pushes with its knuckles)
+  push: {
+    dur: 1.5, events: [[0.4, 'apply']],
+    run(t, cur) {
+      const Lp = palmPose('l', [-0.2, -0.1, -0.5], [0.1, 0.05, -1], [0.1, 1, -0.1], 0.2, 0.25);
+      const k = t < 0.35 ? seg(t, 0, 0.35) : t < 0.95 ? 1 : 1 - seg(t, 0.95, 1.5);
+      key(cur, 'l', Lp, k);
+      cur.l.W.z -= 0.08 * seg(t, 0.35, 0.8) * k;
+      cur.r.W.z -= 0.12 * k; cur.r.W.y += 0.05 * k;
+      return { lw: k };
     },
   },
   // reach out with the left hand toward something in the world (doors, drawers, pick-ups)

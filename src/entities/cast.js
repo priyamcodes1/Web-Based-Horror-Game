@@ -208,6 +208,45 @@ uniform float uLegR[${2 * NB}];`)
   };
 }
 
+/** The rigs' clavicles stand out level and the shoulder joints sit far out, so every survivor had a wide, square,
+ *  shoulder-pad silhouette. Real shoulders slope down from the neck and roll slightly forward, and the deltoid is
+ *  rounder and slimmer: drop and roll each clavicle, pull the shoulder joint in toward the neck, and thin the upper
+ *  arm's cross-section (its length, and the forearm, untouched). Applied after the clip every frame (the clips
+ *  key every bone), guarded so a bone no clip writes is never offset twice. */
+const SHOULDER = { drop: THREE.MathUtils.degToRad(19), roll: THREE.MathUtils.degToRad(10), narrow: 0.8, slim: 0.9 };
+function relaxShoulders(root, bones) {
+  const ops = [];
+  // re-apply `fn` on top of whatever the mixer left in `v` (a Vector3/Quaternion), never on top of itself
+  const guarded = (v, fn) => { const pre = v.clone(), post = v.clone().set(NaN, NaN, NaN, NaN); ops.push(() => { if (v.equals(post)) v.copy(pre); pre.copy(v); fn(v); post.copy(v); }); };
+  root.updateMatrixWorld(true);
+  for (const s of ['l', 'r']) {
+    const clav = bones['clavicle_' + s], arm = bones['upperarm_' + s], fore = bones['lowerarm_' + s];
+    if (!clav || !arm || !clav.parent) continue;
+    const tip = arm.getWorldPosition(new THREE.Vector3()).sub(clav.getWorldPosition(new THREE.Vector3()));
+    const sign = Math.sign(tip.x) || (s === 'l' ? 1 : -1);
+    // model faces +Z, up +Y: tip down = about Z, tip forward = about Y (rest pose, world space)
+    const R = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -sign * SHOULDER.drop)
+      .premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -sign * SHOULDER.roll));
+    const P = clav.parent.getWorldQuaternion(new THREE.Quaternion());
+    const D = P.clone().invert().multiply(R).multiply(P);                 // the same turn, in the clavicle's parent space
+    guarded(clav.quaternion, (q) => q.premultiply(D));
+    guarded(arm.position, (p) => p.multiplyScalar(SHOULDER.narrow));      // shoulder joint closer to the neck
+    if (fore) {
+      // slimmer upper arm: scale its two thickness axes, give the forearm the inverse so only the deltoid/biceps change
+      const len = fore.position.clone().set(Math.abs(fore.position.x), Math.abs(fore.position.y), Math.abs(fore.position.z));
+      const ax = len.x >= len.y && len.x >= len.z ? 'x' : len.y >= len.z ? 'y' : 'z';
+      const thin = new THREE.Vector3(SHOULDER.slim, SHOULDER.slim, SHOULDER.slim); thin[ax] = 1;
+      const fat = new THREE.Vector3(1 / SHOULDER.slim, 1 / SHOULDER.slim, 1 / SHOULDER.slim); fat[ax] = 1;
+      guarded(arm.scale, (v) => v.multiply(thin));
+      guarded(fore.scale, (v) => v.multiply(fat));
+    }
+  }
+  if (!ops.length) return null;
+  const apply = () => { for (const op of ops) op(); };
+  apply();                                                                  // the bind pose too, before any clip runs
+  return apply;
+}
+
 /**
  * A ready-to-animate survivor: { root, mixer, play(name, fade, once, speed), update(dt), bones, height, meta }.
  */
@@ -247,6 +286,8 @@ export function makeSurvivor(index) {
   const physics = springs.length ? new SpringBones(root, { springs, colliders }) : null;
   const skirtFit = makeSkirtFit(root, bones);
 
+  const shoulders = relaxShoulders(root, bones);
+
   const mixer = new THREE.AnimationMixer(root);
   const actions = {};
   let current = null, currentName = '';
@@ -269,6 +310,7 @@ export function makeSurvivor(index) {
     duration(name) { return clips[name] ? clips[name].duration : 0; },
     update(dt) {
       mixer.update(dt);
+      if (shoulders) shoulders();
       if (skirtFit) skirtFit();
       if (physics) physics.update(dt);
     },

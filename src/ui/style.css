@@ -282,6 +282,8 @@ kbd { font-family: var(--ui); background: #1d1414; border: 1px solid #4a3a36; bo
 .letterbox div { position: absolute; left: 0; right: 0; height: 0; background: #000; transition: height .8s cubic-bezier(.6, 0, .2, 1); }
 .letterbox div:first-child { top: 0; } .letterbox div:last-child { bottom: 0; }
 .letterbox.on div { height: 11vh; }
+/* cutscenes: nothing but the picture (and its captions) */
+#hud.cinema :is(.crosshair, .prompt, .objective, .keyring, .lives, .bars, .battery, .hotbar, .hide-slit, .breath, .tabmap, .mic, .guide-btn, .cursor-hint, .spectate) { opacity: 0 !important; visibility: hidden; transition: opacity .3s; }
 .fade { position: absolute; inset: 0; background: #000; opacity: 0; transition: opacity 1s; }
 .fade.on { opacity: 1; }
 .click-to-play { position: absolute; left: 50%; top: 60%; transform: translateX(-50%); font-family: var(--type); letter-spacing: .2em; color: var(--bone-dim); display: none; animation: flick 3s infinite; }
