@@ -164,7 +164,6 @@ export class Menu {
   go(id) {
     $$('#menu .panel').forEach((p) => p.classList.toggle('active', p.id === id));
     if (id === 'm-play') this.initStage();
-    if (id === 'm-credits') this.fillCredits();
     if (this.stack.at(-1) !== id) this.stack.push(id);
     if (id === 'm-settings') this.refreshSettings();
   }
@@ -203,21 +202,6 @@ export class Menu {
     $('#surv-prev').addEventListener('click', () => pick(this.profile - 1));
     $('#surv-next').addEventListener('click', () => pick(this.profile + 1));
     pick(this.profile);
-  }
-
-  /** Third-party asset attributions (CC-BY requires it; CC0 is credited as thanks). */
-  async fillCredits() {
-    if (this._credits) return;
-    this._credits = true;
-    const el = $('#cr-licenses');
-    try {
-      const [chars, sfx] = await Promise.all([fetch('/models/chars/licenses.json').then((r) => r.json()), fetch('/audio/credits.json').then((r) => r.json())]);
-      const by = chars.filter((c) => c.license !== 'CC0');
-      const authors = [...new Set(Object.values(sfx).flat().map((c) => c.author))].sort((x, y) => x.localeCompare(y));
-      el.innerHTML = `<b>Characters</b>: built on MakeHuman / MPFB (CC0). Garments under CC-BY 4.0: ${by.map((c) => `${escapeHtml(c.asset.replace(/^[a-z]+_/, '').replace(/_/g, ' '))} by ${escapeHtml(c.author)}`).join(', ')}.<br>
-        <b>Motion capture</b>: data from mocap.cs.cmu.edu — created with funding from NSF EIA-0196217.<br>
-        <b>Sound</b>: ${Object.values(sfx).flat().length} CC0 recordings from Freesound.org by ${authors.map(escapeHtml).join(', ')}.`;
-    } catch (_) { el.textContent = ''; }
   }
 
   /** Lazy: the 3D stage + real-model portraits load the first time the play screen opens. */
