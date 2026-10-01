@@ -4,7 +4,8 @@
 //  2. third person outside: out under the portico, down the steps, along the gravel drive (something watches from
 //     the doorway), shove the iron gate open, run to the car, get in, door shut
 //  3. ignition, headlights, and the car pulls away down the road into the fog
-// Every surviving player escapes; each peer sees the sequence with themselves in front.
+// Every surviving player escapes, each in their own ending: on each peer's screen it's just them - their hands
+// on the locks, their run, their car. (A dead player watches the first survivor's ending.)
 import * as THREE from 'three';
 import { audio } from '../audio/audio.js';
 import { assets, cloneProp, applyLibrary, libMaterial } from '../core/assets.js';
@@ -467,12 +468,13 @@ export async function playEscape(game) {
   for (const a of g.avatars.values()) { a.scripted = 'escape'; a.root.visible = false; a.torch.visible = false; }
   const aliveIds = new Set(g.allPlayers().filter((q) => q.alive).map((q) => q.id));
   if (!aliveIds.size) aliveIds.add(g.localId);
-  let actors = X.actors.filter((a) => aliveIds.has(a.id));
-  const lead = actors.find((a) => a.id === g.localId) || actors[0];
-  actors = [lead, ...actors.filter((a) => a !== lead)].slice(0, 4);
+  const alive = X.actors.filter((a) => aliveIds.has(a.id));
+  const lead = alive.find((a) => a.id === g.localId) || alive[0] || X.actors[0];
   X.actors.forEach((a) => { a.root.visible = false; a.torch.visible = false; });
-  g.cutsceneActors = actors;
+  g.cutsceneActors = [lead];
   const fpMode = p.alive && !!p.fp;
+  // far from the doors (another room, upstairs, someone else opened it): a quick fade instead of a glide through walls
+  const farStart = fpMode && (Math.abs(p.pos.y - gate.y) > 1 || Math.hypot(p.pos.x - gx, p.pos.z - (gate.z + 0.62)) > 2.5);
   const oldFov = cam.fov;
   // the sets of things the ending owns
   const locks = gate.padlocks || [];
@@ -509,17 +511,11 @@ export async function playEscape(game) {
   T.push = T.rise + 0.5;
   T.doors = T.push + 0.35;
   T.out = T.doors + 1.55;                                      // cut to the outside
-  // the runs (leader to the driver's door, the others round to the far side)
+  // the run: out of the door, down the drive, through the gate, to the driver's door
   const cx = X.carX;
   const leadPath = [[gx, gate.z + 0.1], [gx - 0.1, gate.z - 1.2], [gx - 0.2, X.porchZ + 0.2], [gx - 0.3, X.stepZ - 0.4], [gx - 0.25, -9], [gx - 0.1, -15],
     [gx, FZ + 1.6], [gx + 0.15, FZ - 0.5], [gx + 1.2, FZ - 1.55], [cx - 0.35, CAR_Z + 1.55]];
   const RL = makeRunner(X, leadPath, { gateZ: FZ + 0.3, after: 3.6 });
-  const followers = actors.slice(1).map((a, i) => {
-    const off = (i % 2 ? 0.55 : -0.55) * (1 + Math.floor(i / 2) * 0.5);
-    const path = [[gx + off, gate.z + 1.4 + i * 0.7], [gx + off * 0.6, gate.z - 1.2], [gx + off * 0.7, X.porchZ + 0.2], [gx + off * 0.7, X.stepZ - 0.4], [gx + off, -12],
-      [gx + off * 0.5, FZ + 1.6], [gx + off * 0.3, FZ - 0.6], [cx + 2.0, CAR_Z + 1.9], [cx + 3.15, CAR_Z + 0.2], [cx + 1.2 - i * 0.9, CAR_Z - 1.45]];
-    return { a, R: makeRunner(X, path, { gateZ: FZ + 0.3, vmax: 4.4 - i * 0.1, after: 4.0 }), delay: 0.55 + i * 0.45, gone: false };
-  });
   const C0 = T.out + RL.dur;                                   // the leader stops at the car door
   T.car = { open: C0 + 0.05, inS: C0 + 0.4, inE: C0 + 1.5, close: C0 + 1.75, start: C0 + 2.5, lights: C0 + 3.1, go: C0 + 4.5 };
   T.shots = [
@@ -635,6 +631,10 @@ export async function playEscape(game) {
     p.state = 'stand';
     p.fp.cancel?.();
     p.fp.setHeld(null);                                          // both hands free: the keys come out one by one
+    if (farStart) {
+      g.gfx.fx.uFade.value = 1;
+      p.pos.set(gx, gate.y, gate.z + 1.6); p.yaw = 0; p.pitch = 0; p.eye = 1.56; p.vel.set(0, 0, 0);
+    }
   } else {
     p.cinematic = true; p.cinematicNoFlash = true;
     p.fp?.update?.(0);
@@ -647,6 +647,7 @@ export async function playEscape(game) {
       dt = Math.min(dt, 1 / 20);
       t += dt;
       updateLocks(dt);
+      if (farStart && t < 0.9) g.gfx.fx.uFade.value = 1 - seg(t, 0.15, 0.85);
       // ======================================================== 1. the gate, first person
       if (t < T.out) {
         // each padlock: key in, quarter turn, it springs and drops with its chain
@@ -727,7 +728,6 @@ export async function playEscape(game) {
           lead.pos.set(leadPath[0][0], gy, leadPath[0][1]); lead.yaw = 0; lead.pitch = -0.35;
           lead.torchOn = true;
           lead.char.resetPhysics();
-          followers.forEach((f, i) => { f.a.root.visible = true; f.a.pos.set(f.R.curve.points[0].x, gy, f.R.curve.points[0].z); f.a.yaw = 0; f.a.pitch = -0.3; f.a.torchOn = i === 0; f.a.char.resetPhysics(); });
           audio.setLoop('heartbeat', 0.55, 0.9);
         });
         // ======================================================== 2. outside, third person
@@ -762,16 +762,6 @@ export async function playEscape(game) {
           const seat = X.carLocal(seatLocal.x, seatLocal.y, seatLocal.z);
           lead.pos.copy(seat); lead.yaw = -Math.PI / 2; lead.play('CrouchIdle', 0.3);
           lead.update(dt, cam); lead.torch.visible = false;
-        }
-        // ---- the others: same run, a beat behind, round the car's nose and in on the far side
-        for (const f of followers) {
-          if (f.gone) continue;
-          const ft = lt - f.delay;
-          if (ft < 0) { f.a.play('IdleScared', 0.3); f.a.update(dt, cam); continue; }
-          const v = placeRunner(X, f.a, f.R, ft, dt);
-          f.a.update(dt, cam);
-          if (ft > f.R.dur + 0.4) { f.gone = true; f.a.root.visible = false; f.a.torch.visible = false; f.a.torchOn = false; audio.play('car_door', { pos: f.a.pos.clone(), vol: 0.7, ref: 2 }); }
-          void v;
         }
         // ---- the iron gate: a shove, a swing, a bounce off its stops
         if (gateSwing.on) {
