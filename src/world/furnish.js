@@ -35,6 +35,45 @@ const LIGHTS = {
   Bulb_Light: { color: 0xffd9a0, intensity: 7, range: 7, kind: 'electric' },
 };
 
+const _double = new Map();
+function doubleSided(m) {
+  if (!_double.has(m)) { const c = m.clone(); c.side = THREE.DoubleSide; _double.set(m, c); }
+  return _double.get(m);
+}
+
+/** A drawer front with no body behind it (the nightstand's) gets an open-top box - bottom, sides, back - in its own
+ *  wood, so it slides out as a real drawer. Returns the local y of the inner floor (hollow model drawers included). */
+function drawerBox(front, piece) {
+  const g = front.geometry; g.computeBoundingBox();
+  const b = g.boundingBox, w = b.max.x - b.min.x, h = b.max.y - b.min.y, depth = b.max.z - b.min.z;
+  if (depth > 0.1) {
+    // already a hollow box - but its inside faces were exported wound backwards (culled: only the front showed),
+    // so drawers render both sides; the lowest upward-facing surface inside it is the floor
+    front.material = doubleSided(front.material);
+    const pos = g.attributes.position, nrm = g.attributes.normal;
+    let floor = Infinity;
+    for (let i = 0; i < pos.count; i++) if (nrm.getY(i) > 0.9 && pos.getZ(i) < b.max.z - 0.05) floor = Math.min(floor, pos.getY(i));
+    return Number.isFinite(floor) ? floor : b.min.y + 0.01;
+  }
+  // case depth behind the front, from the piece's carcass
+  let caseDepth = 0.4;
+  piece.traverse((c) => { if (c.isMesh && /case$/.test(c.name)) { c.geometry.computeBoundingBox(); const cb = c.geometry.boundingBox; caseDepth = cb.max.z - cb.min.z; } });
+  const D = Math.max(0.15, caseDepth - 0.06), T = 0.008, W = w - 0.03, H = h - 0.035;
+  const y0 = b.min.y + 0.012, z0 = b.min.z;                         // box hangs behind the front's back face
+  const box = new THREE.Group(); box.name = 'drawer_body';
+  const part = (sx, sy, sz, x, y, z) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), front.material);
+    m.position.set(x, y, z); m.castShadow = false; m.receiveShadow = true; box.add(m);
+  };
+  const cx = (b.min.x + b.max.x) / 2;
+  part(W, T, D, cx, y0 + T / 2, z0 - D / 2);                          // bottom
+  part(T, H, D, cx - W / 2 + T / 2, y0 + H / 2, z0 - D / 2);          // left side
+  part(T, H, D, cx + W / 2 - T / 2, y0 + H / 2, z0 - D / 2);          // right side
+  part(W, H, T, cx, y0 + H / 2, z0 - D + T / 2);                      // back
+  front.add(box);
+  return y0 + T;
+}
+
 export class Furnisher {
   constructor(level, rng) {
     this.L = level;
@@ -289,14 +328,18 @@ export class Furnisher {
       }
     }
     if (name === 'Dresser' || name === 'Nightstand') {
-      obj.traverse((o) => {
-        if (!/Drawer/.test(o.name)) return;
+      const drawers = [];
+      obj.traverse((o) => { if (o.isMesh && /Drawer/.test(o.name)) drawers.push(o); });
+      obj.updateMatrixWorld(true);
+      for (const o of drawers) {
+        const floorY = drawerBox(o, obj);                      // local y of the drawer's inner floor
         const p = new THREE.Vector3(); o.getWorldPosition(p);
         const out = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), obj.rotation.y);
         const dr = { obj: o, open: 0, target: 0, loot: null, base: o.position.clone(), out, room };
-        room.spots.push({ pos: p.clone().addScaledVector(out, -0.2).add(new THREE.Vector3(0, -0.02, 0)), kind: 'drawer', drawer: dr });
+        const floor = p.clone().add(new THREE.Vector3(0, (floorY + 0.004) * obj.scale.y, 0));
+        room.spots.push({ pos: floor.addScaledVector(out, -0.17 * obj.scale.z), kind: 'drawer', drawer: dr });
         room.interact.push({ kind: 'drawer', ref: dr, pos: p, radius: 1.3, label: 'Open drawer' });
-      });
+      }
     }
     if (name === 'FuseBox') {
       const slot = obj.getObjectByName('FuseBox_Slot');

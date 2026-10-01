@@ -308,7 +308,8 @@ export class Game {
     if (this.isHost) {
       const agents = this.agents();
       this.recordTrails(dt, agents);
-      for (const g of this.ghosts) g.think(dt, agents);
+      if (!this.adminFreeze) for (const g of this.ghosts) g.think(dt, agents);
+      else for (const g of this.ghosts) { g.speed = 0; g.moveSpeed = 0; }
       this.noiseEvents.length = 0;
       this.directorTick(dt, agents);
     }
@@ -608,6 +609,13 @@ export class Game {
       case 'quest': this.applyQuest(ev); break;
       case 'fling': { const h = this.hideList[ev.spot]; if (!h) break; if (h.kind === 'bed') audio.play('bed_creak', { pos: h.pos, vol: 1 }); else { h.flung = 1; audio.play('door_slam', { pos: h.pos, vol: 0.7 }); } break; }
       case 'escape': this.escape(); break;
+      case 'admin':
+        if (ev.op === 'keys') {
+          for (const k of Object.keys(this.keys)) this.keys[k] = true;
+          this.hud.keys(this.keys); this.updateObjectives();
+          audio.play('key_pickup');
+        }
+        break;
       case 'gsay': { const gh = this.ghosts[ev.g]; if (gh) gh.speak(ev.kind, ev.vol); break; }
       case 'freeze':
         if (ev.ids.includes(me) && p.alive && !p.hiding) {
@@ -723,6 +731,7 @@ export class Game {
     const g = this.ghosts[ev.g];
     if (ev.id === this.localId) {
       const p = this.player;
+      if (this.adminGod) return;
       p.health = Math.max(1, p.health - ev.dmg);
       p.adrenaline = Math.max(p.adrenaline, 2.2);   // flight response
       p.stamina = Math.min(100, p.stamina + 30);
@@ -741,7 +750,7 @@ export class Game {
   }
 
   /** Just caught: through the death screen and a few seconds after respawning nobody can take them again. */
-  isSafe(id) { return (this.safeUntil.get(id) ?? -1) > this.time; }
+  isSafe(id) { return (this.safeUntil.get(id) ?? -1) > this.time || (this.adminGod && id === this.localId); }
 
   catchPlayer(ghost, agent) {
     if (this.caughtId || this.isSafe(agent.id)) { ghost.state = 'chase'; return; }

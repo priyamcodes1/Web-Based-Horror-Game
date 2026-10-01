@@ -161,7 +161,7 @@ export class Items {
       if (!it.outline) continue;
       const p = this.worldPos(it);
       const d = p.distanceTo(camPos);
-      it.outline.visible = d < 11 && (!it.drawer || it.drawer.open > 0.5 || d < 3);
+      it.outline.visible = d < 11 && (!it.drawer || it.drawer.open > 0.5);   // no x-ray through a shut drawer (read as a floating item)
       if (!it.outline.visible) continue;
       it.obj.updateMatrixWorld(true);
       for (const h of it.outline.children) {

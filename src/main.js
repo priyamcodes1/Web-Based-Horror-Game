@@ -8,6 +8,7 @@ import { Net } from './net/net.js';
 import { Game } from './game/game.js';
 import { assets } from './core/assets.js';
 import { drip } from './ui/drips.js';
+import { AdminPanel } from './ui/admin.js';
 
 loadSettings();
 const $ = (s) => document.querySelector(s);
@@ -156,6 +157,11 @@ canvas.addEventListener('click', () => {
 });
 $('#guide-btn').addEventListener('click', (e) => { e.stopPropagation(); if (game) { if (game.bookOpen) game.closeBook(); else game.openBook(); } });
 $('#mic-btn').addEventListener('click', (e) => { e.stopPropagation(); if (game?.voice?.ready) game.voice.enableMic(!game.voice.micOn); });
+// [`] admin panel: frees the mouse while open
+const admin = new AdminPanel(() => game,
+  () => { if (game && game.running && input.locked) { freeCursor = true; input.unlock(); } },
+  () => { if (game && game.running && !game.bookOpen && freeCursor) { freeCursor = false; hud.cursorHint(false); input.lock(); } });
+
 function toggleCursor() {
   if (!game || !game.running) return;
   if (input.locked) { freeCursor = true; input.unlock(); hud.cursorHint(true); }
@@ -199,6 +205,7 @@ gfx.renderer.setAnimationLoop((now) => {
   last = now;
   if (game && game.running && input.hit('Escape')) { if (game.bookOpen) game.closeBook(); else showPause(!paused); }
   if (game && game.running && input.hit('KeyU') && !game.bookOpen) toggleCursor();
+  if (input.hit('Backquote')) admin.toggle();
   if (game) game.frame(dt);
   input.endFrame();
 });
@@ -207,7 +214,7 @@ gfx.renderer.setAnimationLoop((now) => {
 if (import.meta.env.DEV) {
   addEventListener('error', (e) => console.warn('[page-error]', e.message, e.filename, e.lineno, e.colno));
   window.__dbg = {
-    get game() { return game; }, gfx, input, assets,
+    get game() { return game; }, gfx, input, assets, admin,
     step(n = 1, dt = 1 / 60) {
       const t0 = performance.now();
       for (let i = 0; i < n; i++) { if (game) game.frame(dt); input.endFrame(); }

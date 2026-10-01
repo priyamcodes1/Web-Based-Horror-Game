@@ -27,3 +27,4 @@ tools/blender/_preview/
 tools/blender/_*.py
 tools/audio/_raw/
 tools/dev/
+tools/blender/house/
