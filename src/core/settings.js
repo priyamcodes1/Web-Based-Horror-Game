@@ -38,6 +38,7 @@ const DEFAULTS = {
   showFps: false,
   subtitles: true,
   voiceChat: false,
+  voiceMode: 'ptt',   // 'ptt' | 'open'
   playerName: '',
   profile: -1, // -1 = random
 };

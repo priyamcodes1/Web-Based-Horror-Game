@@ -6,8 +6,10 @@ export const C = 0.5;          // grid cell (m)
 export const FH = 3.8;         // floor-to-floor height
 export const CEIL = 3.5;       // interior ceiling height
 export const WT = 0.1;         // half wall thickness
-const DOOR_W = { door: 1.0, double: 2.0, arch: 2.0, vent: 1.0, gate: 2.5 };
-const DOOR_H = { door: 2.2, double: 2.45, arch: 2.75, vent: 0.9, gate: 3.0 };
+// generous manor doorways: the player must never feel like they're squeezing through a cupboard
+const DOOR_W = { door: 1.5, double: 2.5, arch: 2.5, vent: 1.0, gate: 2.5 };
+const DOOR_H = { door: 2.55, double: 2.8, arch: 3.0, vent: 0.9, gate: 3.0 };
+export const DOOR_H_MODEL = { door: 2.2, double: 2.45, gate: 3.0 };   // heights the leaf meshes were modelled for
 const TILE = {
   wood_floor: 2.0, wood_floor_light: 2.0, parquet: 2.0, tile_checker: 2.4, stone_floor: 3.0, concrete: 3.0,
   plaster: 2.0, brick: 2.5, tile_wall: 1.5, wood_dark: 1.2, wallpaper_red: 1.0, wallpaper_green: 1.0, wallpaper_blue: 1.0,
@@ -108,6 +110,8 @@ export class Level {
   }
 
   layerOfY(y) { return y > FH * 0.5 ? 1 : 0; }
+  /** Floor of a point at eye/head height (0.5–2.4 m above its floor). */
+  layerOfEye(y) { return Math.min(1, Math.max(0, Math.floor((y - 0.5) / FH))); }
 
   heightAt(x, z, l) {
     const s = this.stairs;
@@ -698,7 +702,7 @@ export class Level {
 
   /** Line of sight between two points (eye heights). Walls, closed doors and window glass block. */
   los(a, b) {
-    const la = this.layerOfY(a.y), lb = this.layerOfY(b.y);
+    const la = this.layerOfEye(a.y), lb = this.layerOfEye(b.y);
     const s = this.stairs;
     const inStair = (p) => s && p.x > s.x && p.x < s.x + s.w && p.z > s.z && p.z < s.z + s.d;
     if (la !== lb && !(inStair(a) || inStair(b))) return false;

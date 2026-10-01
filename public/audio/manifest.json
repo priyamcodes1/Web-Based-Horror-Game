@@ -1,27 +1,507 @@
 {
-  "_readme": "Put audio files (ogg/mp3/wav) in this folder and list them here. Any key with files replaces the built-in synthesized sound. Multiple files = random variation.",
-  "footstep": [],
-  "heavy_step": [],
-  "door_creak": [],
-  "door_slam": [],
-  "door_close": [],
-  "whisper": [],
-  "wail": [],
-  "weep": [],
-  "scream": [],
-  "giggle": [],
-  "hum": [],
-  "growl": [],
-  "roar": [],
-  "chain": [],
-  "stinger": [],
-  "thunder": [],
-  "heartbeat": [],
-  "musicbox": [],
-  "piano": [],
-  "rain": [],
-  "wind": [],
-  "drone": [],
-  "chase": [],
-  "menu": []
+ "step_carpet": [
+  "step_carpet/step_carpet_1.mp3",
+  "step_carpet/step_carpet_2.mp3",
+  "step_carpet/step_carpet_3.mp3",
+  "step_carpet/step_carpet_4.mp3",
+  "step_carpet/step_carpet_5.mp3",
+  "step_carpet/step_carpet_6.mp3",
+  "step_carpet/step_carpet_7.mp3",
+  "step_carpet/step_carpet_8.mp3",
+  "step_carpet/step_carpet_9.mp3",
+  "step_carpet/step_carpet_10.mp3"
+ ],
+ "step_tile": [
+  "step_tile/step_tile_1.mp3",
+  "step_tile/step_tile_2.mp3",
+  "step_tile/step_tile_3.mp3",
+  "step_tile/step_tile_4.mp3",
+  "step_tile/step_tile_5.mp3",
+  "step_tile/step_tile_6.mp3",
+  "step_tile/step_tile_7.mp3",
+  "step_tile/step_tile_8.mp3",
+  "step_tile/step_tile_9.mp3",
+  "step_tile/step_tile_10.mp3"
+ ],
+ "step_stone": [
+  "step_stone/step_stone_1.mp3",
+  "step_stone/step_stone_2.mp3",
+  "step_stone/step_stone_3.mp3",
+  "step_stone/step_stone_4.mp3",
+  "step_stone/step_stone_5.mp3",
+  "step_stone/step_stone_6.mp3",
+  "step_stone/step_stone_7.mp3",
+  "step_stone/step_stone_8.mp3",
+  "step_stone/step_stone_9.mp3",
+  "step_stone/step_stone_10.mp3"
+ ],
+ "step_heavy": [
+  "step_heavy/step_heavy_1.mp3",
+  "step_heavy/step_heavy_2.mp3",
+  "step_heavy/step_heavy_3.mp3",
+  "step_heavy/step_heavy_4.mp3",
+  "step_heavy/step_heavy_5.mp3"
+ ],
+ "cloth": [
+  "cloth/cloth_1.mp3",
+  "cloth/cloth_2.mp3",
+  "cloth/cloth_3.mp3"
+ ],
+ "slide": [
+  "slide/slide_1.mp3",
+  "slide/slide_2.mp3"
+ ],
+ "land": [
+  "land/land_1.mp3",
+  "land/land_2.mp3",
+  "land/land_3.mp3",
+  "land/land_4.mp3"
+ ],
+ "gasp": [
+  "gasp/gasp_1.mp3",
+  "gasp/gasp_2.mp3",
+  "gasp/gasp_3.mp3",
+  "gasp/gasp_4.mp3",
+  "gasp/gasp_5.mp3"
+ ],
+ "hurt": [
+  "hurt/hurt_1.mp3",
+  "hurt/hurt_2.mp3",
+  "hurt/hurt_3.mp3",
+  "hurt/hurt_4.mp3",
+  "hurt/hurt_5.mp3",
+  "hurt/hurt_6.mp3"
+ ],
+ "scream_victim": [
+  "scream_victim/scream_victim_1.mp3",
+  "scream_victim/scream_victim_2.mp3",
+  "scream_victim/scream_victim_3.mp3"
+ ],
+ "door_open": [
+  "door_open/door_open_1.mp3",
+  "door_open/door_open_2.mp3",
+  "door_open/door_open_3.mp3",
+  "door_open/door_open_4.mp3",
+  "door_open/door_open_5.mp3"
+ ],
+ "door_close": [
+  "door_close/door_close_1.mp3",
+  "door_close/door_close_2.mp3",
+  "door_close/door_close_3.mp3",
+  "door_close/door_close_4.mp3",
+  "door_close/door_close_5.mp3"
+ ],
+ "door_slam": [
+  "door_slam/door_slam_1.mp3",
+  "door_slam/door_slam_2.mp3",
+  "door_slam/door_slam_3.mp3",
+  "door_slam/door_slam_4.mp3",
+  "door_slam/door_slam_5.mp3"
+ ],
+ "door_locked": [
+  "door_locked/door_locked_1.mp3",
+  "door_locked/door_locked_2.mp3",
+  "door_locked/door_locked_3.mp3",
+  "door_locked/door_locked_4.mp3"
+ ],
+ "door_bang": [
+  "door_bang/door_bang_1.mp3",
+  "door_bang/door_bang_2.mp3"
+ ],
+ "unlock": [
+  "unlock/unlock_1.mp3",
+  "unlock/unlock_2.mp3"
+ ],
+ "drawer_open": [
+  "drawer_open/drawer_open_1.mp3",
+  "drawer_open/drawer_open_2.mp3",
+  "drawer_open/drawer_open_3.mp3",
+  "drawer_open/drawer_open_4.mp3",
+  "drawer_open/drawer_open_5.mp3"
+ ],
+ "drawer_close": [
+  "drawer_close/drawer_close_1.mp3",
+  "drawer_close/drawer_close_2.mp3",
+  "drawer_close/drawer_close_3.mp3"
+ ],
+ "wardrobe": [
+  "wardrobe/wardrobe_1.mp3",
+  "wardrobe/wardrobe_2.mp3",
+  "wardrobe/wardrobe_3.mp3"
+ ],
+ "bed_creak": [
+  "bed_creak/bed_creak_1.mp3",
+  "bed_creak/bed_creak_2.mp3"
+ ],
+ "pickup": [
+  "pickup/pickup_1.mp3",
+  "pickup/pickup_2.mp3",
+  "pickup/pickup_3.mp3"
+ ],
+ "keys": [
+  "keys/keys_1.mp3",
+  "keys/keys_2.mp3",
+  "keys/keys_3.mp3",
+  "keys/keys_4.mp3"
+ ],
+ "flashlight": [
+  "flashlight/flashlight_1.mp3",
+  "flashlight/flashlight_2.mp3",
+  "flashlight/flashlight_3.mp3",
+  "flashlight/flashlight_4.mp3",
+  "flashlight/flashlight_5.mp3"
+ ],
+ "glass_break": [
+  "glass_break/glass_break_1.mp3",
+  "glass_break/glass_break_2.mp3",
+  "glass_break/glass_break_3.mp3",
+  "glass_break/glass_break_4.mp3"
+ ],
+ "wood_break": [
+  "wood_break/wood_break_1.mp3",
+  "wood_break/wood_break_2.mp3",
+  "wood_break/wood_break_3.mp3"
+ ],
+ "lever": [
+  "lever/lever_1.mp3",
+  "lever/lever_2.mp3",
+  "lever/lever_3.mp3",
+  "lever/lever_4.mp3"
+ ],
+ "fuse": [
+  "fuse/fuse_1.mp3",
+  "fuse/fuse_2.mp3"
+ ],
+ "power_down": [
+  "power_down/power_down_1.mp3",
+  "power_down/power_down_2.mp3",
+  "power_down/power_down_3.mp3"
+ ],
+ "power_up": [
+  "power_up/power_up_1.mp3",
+  "power_up/power_up_2.mp3"
+ ],
+ "light_buzz": [
+  "light_buzz/light_buzz_1.mp3"
+ ],
+ "object_fall": [
+  "object_fall/object_fall_1.mp3",
+  "object_fall/object_fall_2.mp3",
+  "object_fall/object_fall_3.mp3",
+  "object_fall/object_fall_4.mp3"
+ ],
+ "frame_fall": [
+  "frame_fall/frame_fall_1.mp3"
+ ],
+ "chair_scrape": [
+  "chair_scrape/chair_scrape_1.mp3",
+  "chair_scrape/chair_scrape_2.mp3",
+  "chair_scrape/chair_scrape_3.mp3",
+  "chair_scrape/chair_scrape_4.mp3"
+ ],
+ "knock": [
+  "knock/knock_1.mp3",
+  "knock/knock_2.mp3",
+  "knock/knock_3.mp3",
+  "knock/knock_4.mp3"
+ ],
+ "whoosh": [
+  "whoosh/whoosh_1.mp3",
+  "whoosh/whoosh_2.mp3",
+  "whoosh/whoosh_3.mp3",
+  "whoosh/whoosh_4.mp3"
+ ],
+ "swipe": [
+  "swipe/swipe_1.mp3",
+  "swipe/swipe_2.mp3",
+  "swipe/swipe_3.mp3",
+  "swipe/swipe_4.mp3"
+ ],
+ "hit_body": [
+  "hit_body/hit_body_1.mp3",
+  "hit_body/hit_body_2.mp3",
+  "hit_body/hit_body_3.mp3",
+  "hit_body/hit_body_4.mp3"
+ ],
+ "bone_crack": [
+  "bone_crack/bone_crack_1.mp3",
+  "bone_crack/bone_crack_2.mp3",
+  "bone_crack/bone_crack_3.mp3"
+ ],
+ "heal": [
+  "heal/heal_1.mp3"
+ ],
+ "pills": [
+  "pills/pills_1.mp3",
+  "pills/pills_2.mp3"
+ ],
+ "paper": [
+  "paper/paper_1.mp3",
+  "paper/paper_2.mp3",
+  "paper/paper_3.mp3",
+  "paper/paper_4.mp3"
+ ],
+ "book_page": [
+  "book_page/book_page_1.mp3",
+  "book_page/book_page_2.mp3",
+  "book_page/book_page_3.mp3",
+  "book_page/book_page_4.mp3"
+ ],
+ "chain": [
+  "chain/chain_1.mp3",
+  "chain/chain_2.mp3",
+  "chain/chain_3.mp3",
+  "chain/chain_4.mp3",
+  "chain/chain_5.mp3"
+ ],
+ "clock_tick": [
+  "clock_tick/clock_tick_1.mp3"
+ ],
+ "phone_ring": [
+  "phone_ring/phone_ring_1.mp3",
+  "phone_ring/phone_ring_2.mp3"
+ ],
+ "radio_static": [
+  "radio_static/radio_static_1.mp3",
+  "radio_static/radio_static_2.mp3"
+ ],
+ "music_box": [
+  "music_box/music_box_1.mp3",
+  "music_box/music_box_2.mp3"
+ ],
+ "piano_creepy": [
+  "piano_creepy/piano_creepy_1.mp3",
+  "piano_creepy/piano_creepy_2.mp3",
+  "piano_creepy/piano_creepy_3.mp3"
+ ],
+ "baby_cry": [
+  "baby_cry/baby_cry_1.mp3",
+  "baby_cry/baby_cry_2.mp3"
+ ],
+ "water_drip": [
+  "water_drip/water_drip_1.mp3",
+  "water_drip/water_drip_2.mp3"
+ ],
+ "rope_creak": [
+  "rope_creak/rope_creak_1.mp3"
+ ],
+ "house_creak": [
+  "house_creak/house_creak_1.mp3",
+  "house_creak/house_creak_2.mp3",
+  "house_creak/house_creak_3.mp3",
+  "house_creak/house_creak_4.mp3",
+  "house_creak/house_creak_5.mp3",
+  "house_creak/house_creak_6.mp3"
+ ],
+ "glass_tap": [
+  "glass_tap/glass_tap_1.mp3",
+  "glass_tap/glass_tap_2.mp3"
+ ],
+ "window_bang": [
+  "window_bang/window_bang_1.mp3",
+  "window_bang/window_bang_2.mp3",
+  "window_bang/window_bang_3.mp3"
+ ],
+ "candle_out": [
+  "candle_out/candle_out_1.mp3",
+  "candle_out/candle_out_2.mp3",
+  "candle_out/candle_out_3.mp3"
+ ],
+ "thunder": [
+  "thunder/thunder_1.mp3",
+  "thunder/thunder_2.mp3",
+  "thunder/thunder_3.mp3",
+  "thunder/thunder_4.mp3"
+ ],
+ "car_door": [
+  "car_door/car_door_1.mp3",
+  "car_door/car_door_2.mp3"
+ ],
+ "car_start": [
+  "car_start/car_start_1.mp3"
+ ],
+ "car_idle": [
+  "car_idle/car_idle_1.mp3"
+ ],
+ "weep": [
+  "weep/weep_1.mp3",
+  "weep/weep_2.mp3"
+ ],
+ "wail": [
+  "wail/wail_1.mp3",
+  "wail/wail_2.mp3",
+  "wail/wail_3.mp3"
+ ],
+ "ghost_whisper": [
+  "ghost_whisper/ghost_whisper_1.mp3",
+  "ghost_whisper/ghost_whisper_2.mp3",
+  "ghost_whisper/ghost_whisper_3.mp3",
+  "ghost_whisper/ghost_whisper_4.mp3"
+ ],
+ "scream_ghost": [
+  "scream_ghost/scream_ghost_1.mp3",
+  "scream_ghost/scream_ghost_2.mp3",
+  "scream_ghost/scream_ghost_3.mp3",
+  "scream_ghost/scream_ghost_4.mp3",
+  "scream_ghost/scream_ghost_5.mp3"
+ ],
+ "laugh_ghost": [
+  "laugh_ghost/laugh_ghost_1.mp3",
+  "laugh_ghost/laugh_ghost_2.mp3",
+  "laugh_ghost/laugh_ghost_3.mp3",
+  "laugh_ghost/laugh_ghost_4.mp3"
+ ],
+ "giggle": [
+  "giggle/giggle_1.mp3",
+  "giggle/giggle_2.mp3",
+  "giggle/giggle_3.mp3",
+  "giggle/giggle_4.mp3",
+  "giggle/giggle_5.mp3"
+ ],
+ "hum": [
+  "hum/hum_1.mp3",
+  "hum/hum_2.mp3",
+  "hum/hum_3.mp3"
+ ],
+ "growl": [
+  "growl/growl_1.mp3",
+  "growl/growl_2.mp3",
+  "growl/growl_3.mp3",
+  "growl/growl_4.mp3",
+  "growl/growl_5.mp3"
+ ],
+ "roar": [
+  "roar/roar_1.mp3",
+  "roar/roar_2.mp3",
+  "roar/roar_3.mp3",
+  "roar/roar_4.mp3"
+ ],
+ "breath_monster": [
+  "breath_monster/breath_monster_1.mp3",
+  "breath_monster/breath_monster_2.mp3",
+  "breath_monster/breath_monster_3.mp3"
+ ],
+ "jumpscare": [
+  "jumpscare/jumpscare_1.mp3",
+  "jumpscare/jumpscare_2.mp3",
+  "jumpscare/jumpscare_3.mp3",
+  "jumpscare/jumpscare_4.mp3"
+ ],
+ "stinger": [
+  "stinger/stinger_2.mp3",
+  "stinger/stinger_3.mp3"
+ ],
+ "vanish": [
+  "vanish/vanish_1.mp3",
+  "vanish/vanish_2.mp3"
+ ],
+ "rain_window": [
+  "rain_window/rain_window_1.mp3",
+  "rain_window/rain_window_2.mp3"
+ ],
+ "rain_heavy": [
+  "rain_heavy/rain_heavy_1.mp3"
+ ],
+ "wind_house": [
+  "wind_house/wind_house_1.mp3",
+  "wind_house/wind_house_2.mp3"
+ ],
+ "ambience_house": [
+  "ambience_house/ambience_house_1.mp3",
+  "ambience_house/ambience_house_2.mp3"
+ ],
+ "heartbeat": [
+  "heartbeat/heartbeat_2.mp3"
+ ],
+ "menu_ambience": [
+  "menu_ambience/menu_ambience_1.mp3",
+  "menu_ambience/menu_ambience_2.mp3"
+ ],
+ "chase_loop": [
+  "chase_loop/chase_loop_1.mp3"
+ ],
+ "ui_hover": [
+  "ui_hover/ui_hover_1.mp3",
+  "ui_hover/ui_hover_2.mp3",
+  "ui_hover/ui_hover_3.mp3"
+ ],
+ "ui_click": [
+  "ui_click/ui_click_1.mp3",
+  "ui_click/ui_click_2.mp3",
+  "ui_click/ui_click_3.mp3"
+ ],
+ "ui_back": [
+  "ui_back/ui_back_1.mp3",
+  "ui_back/ui_back_2.mp3"
+ ],
+ "ui_open": [
+  "ui_open/ui_open_1.mp3",
+  "ui_open/ui_open_2.mp3"
+ ],
+ "step_wood": [
+  "step_wood/step_wood_1.mp3",
+  "step_wood/step_wood_2.mp3",
+  "step_wood/step_wood_3.mp3",
+  "step_wood/step_wood_4.mp3",
+  "step_wood/step_wood_5.mp3",
+  "step_wood/step_wood_6.mp3",
+  "step_wood/step_wood_7.mp3",
+  "step_wood/step_wood_8.mp3",
+  "step_wood/step_wood_9.mp3",
+  "step_wood/step_wood_10.mp3"
+ ],
+ "step_run": [
+  "step_run/step_run_1.mp3",
+  "step_run/step_run_2.mp3",
+  "step_run/step_run_3.mp3",
+  "step_run/step_run_4.mp3",
+  "step_run/step_run_5.mp3",
+  "step_run/step_run_6.mp3",
+  "step_run/step_run_7.mp3",
+  "step_run/step_run_8.mp3",
+  "step_run/step_run_9.mp3",
+  "step_run/step_run_10.mp3"
+ ],
+ "crawl": [
+  "crawl/crawl_2.mp3",
+  "crawl/crawl_3.mp3"
+ ],
+ "breath_heavy": [
+  "breath_heavy/breath_heavy_1.mp3",
+  "breath_heavy/breath_heavy_2.mp3"
+ ],
+ "breath_scared": [
+  "breath_scared/breath_scared_1.mp3",
+  "breath_scared/breath_scared_2.mp3"
+ ],
+ "battery": [
+  "battery/battery_1.mp3",
+  "battery/battery_2.mp3",
+  "battery/battery_3.mp3",
+  "battery/battery_4.mp3"
+ ],
+ "bulb_pop": [
+  "bulb_pop/bulb_pop_1.mp3",
+  "bulb_pop/bulb_pop_2.mp3",
+  "bulb_pop/bulb_pop_3.mp3"
+ ],
+ "inject": [
+  "inject/inject_1.mp3",
+  "inject/inject_2.mp3",
+  "inject/inject_3.mp3"
+ ],
+ "clock_chime": [
+  "clock_chime/clock_chime_1.mp3",
+  "clock_chime/clock_chime_2.mp3"
+ ],
+ "bell": [
+  "bell/bell_1.mp3",
+  "bell/bell_2.mp3",
+  "bell/bell_3.mp3"
+ ],
+ "child_whisper": [
+  "child_whisper/child_whisper_1.mp3",
+  "child_whisper/child_whisper_2.mp3",
+  "child_whisper/child_whisper_3.mp3"
+ ]
 }

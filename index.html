@@ -35,30 +35,44 @@
     </section>
 
     <!-- play setup -->
-    <section id="m-play" class="panel wide">
+    <section id="m-play" class="panel wide play2">
       <header class="ph"><button class="back" data-go="m-main">‹ Back</button><h2>Into the Dark</h2></header>
-      <div class="play-grid">
-        <div class="col">
-          <h3>Mode</h3>
-          <div class="seg" id="mode-seg">
-            <button data-v="solo" class="on">Solo</button><button data-v="host">Host Online</button><button data-v="join">Join Online</button>
+      <div class="mode-tabs" id="mode-seg">
+        <button data-v="solo" class="on"><b>Solo</b><small>You, the house, and them</small></button>
+        <button data-v="host"><b>Host Online</b><small>Open a room for up to 8</small></button>
+        <button data-v="join"><b>Join Online</b><small>Enter a friend's room code</small></button>
+      </div>
+      <div class="play-body">
+        <!-- survivor -->
+        <div class="card surv-card">
+          <div class="card-h"><h3>Survivor</h3><span class="surv-count" id="surv-count"></span></div>
+          <div class="surv-stage">
+            <canvas id="surv-view"></canvas>
+            <div class="surv-load" id="surv-load">Waking the guests…</div>
+            <button class="surv-nav l" id="surv-prev" aria-label="Previous survivor">‹</button>
+            <button class="surv-nav r" id="surv-next" aria-label="Next survivor">›</button>
+            <div class="surv-info"><b id="surv-name"></b><small id="surv-desc"></small></div>
           </div>
+          <div class="surv-row" id="profiles"></div>
           <label class="field"><span>Your name</span><input id="in-name" maxlength="16" placeholder="Survivor" autocomplete="off" /></label>
-          <div id="join-box" class="hidden">
-            <label class="field"><span>Room code</span><input id="in-code" maxlength="6" placeholder="ABCD" autocomplete="off" /></label>
-          </div>
-          <h3>Survivor</h3>
-          <div class="profiles" id="profiles"></div>
         </div>
-        <div class="col host-only">
-          <h3>Map</h3>
-          <div class="maps" id="maps"></div>
-          <h3>Ghosts <small id="ghost-count-label">1</small></h3>
-          <div class="seg" id="ghost-count"><button data-v="1" class="on">1</button><button data-v="2">2</button><button data-v="3">3</button></div>
-          <div class="ghosts" id="ghosts"></div>
-          <div class="row2">
-            <div><h3>Lives</h3><div class="stepper" id="lives"><button data-d="-1">−</button><b>3</b><button data-d="1">+</button></div></div>
-            <div><h3>Difficulty</h3><div class="seg" id="difficulty"><button data-v="easy">Easy</button><button data-v="normal" class="on">Normal</button><button data-v="nightmare">Nightmare</button></div></div>
+        <!-- match -->
+        <div class="card match-card">
+          <div id="join-box" class="hidden join-box">
+            <h3>Room code</h3>
+            <input id="in-code" maxlength="6" placeholder="ABCD" autocomplete="off" class="code-in" />
+            <p class="hint">The host picks the map, ghosts and rules. You'll see them in the lobby.</p>
+          </div>
+          <div class="host-only">
+            <div class="card-h"><h3>Map</h3></div>
+            <div class="maps" id="maps"></div>
+            <div class="card-h"><h3>Ghosts <small id="ghost-count-label">1</small></h3>
+              <div class="seg" id="ghost-count"><button data-v="1" class="on">1</button><button data-v="2">2</button><button data-v="3">3</button></div></div>
+            <div class="ghosts" id="ghosts"></div>
+            <div class="row2">
+              <div><h3>Lives</h3><div class="stepper" id="lives"><button data-d="-1">−</button><b>3</b><button data-d="1">+</button></div></div>
+              <div><h3>Difficulty</h3><div class="seg" id="difficulty"><button data-v="easy">Easy</button><button data-v="normal" class="on">Normal</button><button data-v="nightmare">Nightmare</button></div></div>
+            </div>
           </div>
         </div>
       </div>
@@ -95,7 +109,10 @@
         <label class="chk"><input type="checkbox" id="s-headBob" /><span>Head bob</span></label>
         <label class="chk"><input type="checkbox" id="s-subtitles" /><span>Subtitles</span></label>
         <label class="chk"><input type="checkbox" id="s-showFps" /><span>Show FPS</span></label>
-        <label class="chk"><input type="checkbox" id="s-voiceChat" /><span>Proximity voice chat (hold V)</span></label>
+        <h3>Voice chat</h3>
+        <label class="chk"><input type="checkbox" id="s-voiceChat" /><span>Use my microphone in online games</span></label>
+        <div class="seg" id="voice-mode"><button data-v="ptt">Push to talk (V)</button><button data-v="open">Open mic</button></div>
+        <p class="hint">Voices are 3D: players sound like they are in the room with you, muffled behind doors and walls. <kbd>M</kbd> mutes / unmutes in game.</p>
       </div>
     </section>
 
@@ -115,6 +132,9 @@
         <tr><td><kbd>Space</kbd></td><td>Hold breath (while hiding)</td></tr>
         <tr><td><kbd>Tab</kbd></td><td>Objectives &amp; map</td></tr>
         <tr><td><kbd>V</kbd></td><td>Push-to-talk (voice chat)</td></tr>
+        <tr><td><kbd>M</kbd></td><td>Mute / unmute microphone</td></tr>
+        <tr><td><kbd>B</kbd></td><td>Field guide (ghosts, items, survival)</td></tr>
+        <tr><td><kbd>U</kbd></td><td>Free the mouse cursor (click HUD, guide) without pausing</td></tr>
         <tr><td><kbd>Esc</kbd></td><td>Pause</td></tr>
       </table>
     </section>
@@ -123,9 +143,13 @@
     <section id="m-credits" class="panel">
       <header class="ph"><button class="back" data-go="m-main">‹ Back</button><h2>Credits</h2></header>
       <div class="credits">
-        <p>Characters, props, textures &amp; animation generated in Blender by procedural scripts.</p>
-        <p>Engine: three.js · Networking: PeerJS / WebRTC</p>
-        <p class="hint">Drop your own sound files into <code>/public/audio</code> (see manifest.json) to replace the synthesized audio.</p>
+        <p class="cr-by">Built by <b>itzglecni</b></p>
+        <h3>Engine</h3>
+        <ul class="cr-stack">
+          <li>JavaScript (ES2022)</li><li>HTML5</li><li>CSS3</li><li>GLSL shaders</li>
+          <li>three.js · WebGL 2</li><li>Web Audio API (HRTF 3D audio)</li><li>WebRTC · PeerJS</li><li>Vite</li><li>Python · Blender</li>
+        </ul>
+        <p class="hint cr-lic" id="cr-licenses"></p>
       </div>
     </section>
   </div>
@@ -134,7 +158,7 @@
   <div id="loading" class="screen">
     <div class="candle"><div class="flame"></div><div class="wax"></div></div>
     <div class="load-title">Blackwood Manor</div>
-    <div class="load-bar"><div class="load-fill" id="load-fill"></div><div class="load-drip"></div></div>
+    <div class="load-bar"><div class="load-fill" id="load-fill"></div></div>
     <div class="load-stage" id="load-stage">Unlocking the front door…</div>
     <div class="load-tip" id="load-tip"></div>
   </div>
@@ -142,6 +166,7 @@
   <!-- ============================== HUD ============================== -->
   <div id="hud" class="screen">
     <div class="vignette" id="fx-vignette"></div>
+    <div class="frost" id="frost"></div>
     <div class="damage" id="fx-damage"></div>
     <div class="crosshair" id="crosshair"></div>
     <div class="prompt" id="prompt"></div>
@@ -162,8 +187,18 @@
     <div class="note" id="note"><div class="paper"><h4 id="note-title"></h4><p id="note-body"></p><small>[E] close</small></div></div>
     <div class="spectate" id="spectate"><button id="spec-prev">‹</button><div><small>Spectating</small><b id="spec-name"></b></div><button id="spec-next">›</button></div>
     <div class="death" id="death"><h2 id="death-title">You were taken</h2><p id="death-sub"></p></div>
-    <div class="talk" id="talk">● TALKING</div>
+    <button class="mic hidden" id="mic-btn" title="Microphone (M)"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/><path class="slash" d="M4 4l16 16"/></svg><span id="mic-label">PTT · V</span><i id="mic-meter"></i></button>
+    <div class="cursor-hint" id="cursor-hint">Cursor free — press <kbd>U</kbd> to look around again</div>
     <div class="letterbox" id="letterbox"><div></div><div></div></div>
+    <button class="guide-btn" id="guide-btn" title="Field guide (B)"><svg viewBox="0 0 24 24"><path d="M4 5.5C6.5 4 9.5 4 12 5.8 14.5 4 17.5 4 20 5.5V19c-2.5-1.4-5.5-1.4-8 .5-2.5-1.9-5.5-1.9-8-.5z"/><path d="M12 5.8v13.7"/></svg><span>Guide · B</span></button>
+    <div class="guide" id="guide">
+      <div class="g-book">
+        <nav class="g-tabs"></nav>
+        <div class="g-spread"><section class="g-page g-left"></section><section class="g-page g-right"></section></div>
+        <button class="g-prev" aria-label="Previous chapter">‹</button><button class="g-next" aria-label="Next chapter">›</button>
+        <button class="g-close" aria-label="Close guide">✕</button>
+      </div>
+    </div>
     <div class="fade" id="fade"></div>
     <div class="click-to-play" id="click-to-play">Click to continue</div>
   </div>

@@ -181,11 +181,11 @@ export const MAP_LIST = ['blackwood', 'ashgrove', 'hollowmere'];
 
 export const GHOST_TYPES = {
   widow: { id: 'widow', name: 'The Widow', model: 'ghost_widow', img: '/textures/painting_0.webp',
-    blurb: 'Weeps in the dark. Silent until she sees you — then she does not stop.' },
+    blurb: 'Roams silently and weeps. Screams when she spots you and chases for a long time. A flashlight in her face makes her flinch.' },
   child: { id: 'child', name: 'The Hollow Child', model: 'ghost_child', img: '/textures/painting_1.webp',
-    blurb: 'Hears everything. Fast, cruel, easily bored. Hums when she hunts.' },
+    blurb: 'Nearly blind, hears everything. Faster than your sprint but bored quickly. Crawls through vents; stares, giggles, vanishes.' },
   warden: { id: 'warden', name: 'The Warden', model: 'ghost_warden', img: '/textures/painting_2.webp',
-    blurb: 'Slow. Relentless. You will hear the chain long before you see him.' },
+    blurb: 'Slow but relentless. Tracks you by scent, smashes doors open, his roar freezes your legs. You hear his chain first.' },
 };
 
 export const PROFILES = [

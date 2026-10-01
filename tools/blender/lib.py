@@ -19,7 +19,8 @@ V = Vector
 
 # ----------------------------------------------------------------------------- scene
 def reset_scene():
-    if bpy.context.object and bpy.context.object.mode != 'OBJECT':
+    ob = getattr(bpy.context, 'object', None)
+    if ob and ob.mode != 'OBJECT':
         bpy.ops.object.mode_set(mode='OBJECT')
     for o in list(bpy.data.objects):
         bpy.data.objects.remove(o, do_unlink=True)

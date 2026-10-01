@@ -1,0 +1,1840 @@
+{
+ "step_wood": [
+  {
+   "title": "Wood Steps",
+   "author": "Phil25",
+   "freesound": 208104,
+   "license": "CC0"
+  }
+ ],
+ "step_carpet": [
+  {
+   "title": "Loud Walking on carpet.wav",
+   "author": "musicandsoundyay",
+   "freesound": 452753,
+   "license": "CC0"
+  }
+ ],
+ "step_tile": [
+  {
+   "title": "walking_footsteps_flat_shoes_tile_floor_5.wav",
+   "author": "daboy291",
+   "freesound": 138093,
+   "license": "CC0"
+  },
+  {
+   "title": "walking_footsteps_tennis_shoes_tile_floor_8.wav",
+   "author": "daboy291",
+   "freesound": 138072,
+   "license": "CC0"
+  }
+ ],
+ "step_stone": [
+  {
+   "title": "Footsteps - Stone, Rock, Concrete, Cement",
+   "author": "SecureSubset",
+   "freesound": 813622,
+   "license": "CC0"
+  },
+  {
+   "title": "light footsteps on concrete walking.wav",
+   "author": "rsellick",
+   "freesound": 545543,
+   "license": "CC0"
+  },
+  {
+   "title": "02-Man fast walking concrete.wav",
+   "author": "14GPanskaHonc_Petr",
+   "freesound": 419165,
+   "license": "CC0"
+  }
+ ],
+ "step_heavy": [
+  {
+   "title": "Footstep_Walk_HardSurface_6.wav",
+   "author": "nicholasdaryl",
+   "freesound": 563473,
+   "license": "CC0"
+  },
+  {
+   "title": "Foot stomp 4",
+   "author": "locky_Y",
+   "freesound": 733166,
+   "license": "CC0"
+  },
+  {
+   "title": "Giant step",
+   "author": "DasWaff",
+   "freesound": 721601,
+   "license": "CC0"
+  },
+  {
+   "title": "Foot stomp 5",
+   "author": "locky_Y",
+   "freesound": 733167,
+   "license": "CC0"
+  },
+  {
+   "title": "Foot stomp 3",
+   "author": "locky_Y",
+   "freesound": 733165,
+   "license": "CC0"
+  }
+ ],
+ "step_run": [
+  {
+   "title": "Running footsteps on wood.WAV",
+   "author": "thomasanthony321",
+   "freesound": 682772,
+   "license": "CC0"
+  }
+ ],
+ "cloth": [
+  {
+   "title": "Clothes Rustling 1",
+   "author": "WasabiWielder",
+   "freesound": 334219,
+   "license": "CC0"
+  },
+  {
+   "title": "Cloth_Noise_2.wav",
+   "author": "drewsimko",
+   "freesound": 682870,
+   "license": "CC0"
+  },
+  {
+   "title": "Clothes Rustling Movement 13_22",
+   "author": "Joao_Janz",
+   "freesound": 493505,
+   "license": "CC0"
+  }
+ ],
+ "crawl": [
+  {
+   "title": "vent crawl",
+   "author": "obamaspinal420",
+   "freesound": 641150,
+   "license": "CC0"
+  },
+  {
+   "title": "Male dress shoes_fast walk_draggingly slow.wav",
+   "author": "tlcolbe",
+   "freesound": 406678,
+   "license": "CC0"
+  }
+ ],
+ "slide": [
+  {
+   "title": "Wood Floor Rubber Shoe Slide 1_9",
+   "author": "Joao_Janz",
+   "freesound": 504008,
+   "license": "CC0"
+  },
+  {
+   "title": "Shoe Sliding Across The Floor.wav",
+   "author": "Therealnoshoes",
+   "freesound": 650749,
+   "license": "CC0"
+  }
+ ],
+ "land": [
+  {
+   "title": "Body fall.wav",
+   "author": "DylanTheFish",
+   "freesound": 417994,
+   "license": "CC0"
+  },
+  {
+   "title": "BODY FALL - V HVY - DIRT",
+   "author": "leonelmail",
+   "freesound": 504626,
+   "license": "CC0"
+  },
+  {
+   "title": "Body Fall Over.wav",
+   "author": "raubana",
+   "freesound": 82027,
+   "license": "CC0"
+  },
+  {
+   "title": "Thud / Falling on wooden floor / Snapping, breaking neck",
+   "author": "Breviceps",
+   "freesound": 447922,
+   "license": "CC0"
+  }
+ ],
+ "breath_heavy": [
+  {
+   "title": "Heavy Breath - 1.wav",
+   "author": "SpaceJoe",
+   "freesound": 485684,
+   "license": "CC0"
+  },
+  {
+   "title": "HeavyBreathing.m4a",
+   "author": "haydenswift_1030",
+   "freesound": 508390,
+   "license": "CC0"
+  }
+ ],
+ "breath_scared": [
+  {
+   "title": "Womans breath and shock.wav",
+   "author": "Jorgemaca",
+   "freesound": 669295,
+   "license": "CC0"
+  },
+  {
+   "title": "HeavyBreathing.m4a",
+   "author": "haydenswift_1030",
+   "freesound": 508390,
+   "license": "CC0"
+  }
+ ],
+ "gasp": [
+  {
+   "title": "Shocked gasp.wav",
+   "author": "GentlemanWalrus",
+   "freesound": 180005,
+   "license": "CC0"
+  },
+  {
+   "title": "Gasp Male",
+   "author": "bertiehs",
+   "freesound": 271245,
+   "license": "CC0"
+  },
+  {
+   "title": "Gasp.mp3",
+   "author": "laft2k",
+   "freesound": 437667,
+   "license": "CC0"
+  },
+  {
+   "title": "Man Gasping",
+   "author": "ranman22",
+   "freesound": 677888,
+   "license": "CC0"
+  },
+  {
+   "title": "Exaggerated Surprised Gasp!",
+   "author": "CuboRodante",
+   "freesound": 812418,
+   "license": "CC0"
+  }
+ ],
+ "hurt": [
+  {
+   "title": "Grunt2 - Death Pain.wav",
+   "author": "tonsil5",
+   "freesound": 416838,
+   "license": "CC0"
+  },
+  {
+   "title": "Grunt1 - Death Pain.wav",
+   "author": "tonsil5",
+   "freesound": 416839,
+   "license": "CC0"
+  },
+  {
+   "title": "gruntsound.wav",
+   "author": "snaginneb",
+   "freesound": 90164,
+   "license": "CC0"
+  },
+  {
+   "title": "PlayerHurt2",
+   "author": "mrickey13",
+   "freesound": 515624,
+   "license": "CC0"
+  },
+  {
+   "title": "Voice_AdultMale_PainGrunts_09.wav",
+   "author": "MrFossy",
+   "freesound": 547209,
+   "license": "CC0"
+  },
+  {
+   "title": "ouch screem.wav",
+   "author": "samueleunimancer",
+   "freesound": 386893,
+   "license": "CC0"
+  }
+ ],
+ "scream_victim": [
+  {
+   "title": "Weirdo Scream.wav",
+   "author": "GreatNate98",
+   "freesound": 353086,
+   "license": "CC0"
+  },
+  {
+   "title": "Female Scream",
+   "author": "DigestContent",
+   "freesound": 449702,
+   "license": "CC0"
+  },
+  {
+   "title": "ScreamM.ogg",
+   "author": "egomassive",
+   "freesound": 536786,
+   "license": "CC0"
+  }
+ ],
+ "door_open": [
+  {
+   "title": "creaking-door-open01.flac",
+   "author": "Aiyumi",
+   "freesound": 244425,
+   "license": "CC0"
+  },
+  {
+   "title": "Door Opening",
+   "author": "Foxfire-",
+   "freesound": 702171,
+   "license": "CC0"
+  },
+  {
+   "title": "Door_handle_opening_creak.wav",
+   "author": "bouncyballblue",
+   "freesound": 547024,
+   "license": "CC0"
+  },
+  {
+   "title": "Door Opening Creaking",
+   "author": "dleverett",
+   "freesound": 710510,
+   "license": "CC0"
+  },
+  {
+   "title": "Wooden_Door_Squeak_04",
+   "author": "BlondPanda",
+   "freesound": 778462,
+   "license": "CC0"
+  }
+ ],
+ "door_close": [
+  {
+   "title": "Shut door.WAV",
+   "author": "alberto96",
+   "freesound": 394118,
+   "license": "CC0"
+  },
+  {
+   "title": "pine door shut - light.wav",
+   "author": "Imitatia%20Dei",
+   "freesound": 96471,
+   "license": "CC0"
+  },
+  {
+   "title": "LargeWoodDoorCloseScrape.wav",
+   "author": "chewiesmissus",
+   "freesound": 213392,
+   "license": "CC0"
+  },
+  {
+   "title": "Door closing, modern apartment, springy #15",
+   "author": "JapanYoshiTheGamer",
+   "freesound": 648831,
+   "license": "CC0"
+  },
+  {
+   "title": "Wooden_Door_Squeak_04",
+   "author": "BlondPanda",
+   "freesound": 778462,
+   "license": "CC0"
+  }
+ ],
+ "door_slam": [
+  {
+   "title": "Wood Door Slam.wav",
+   "author": "MootMcnoodles",
+   "freesound": 444409,
+   "license": "CC0"
+  },
+  {
+   "title": "Door_Slam.aif",
+   "author": "aliceemily",
+   "freesound": 176308,
+   "license": "CC0"
+  },
+  {
+   "title": "Slamming Door.mp3",
+   "author": "bmusic92",
+   "freesound": 232931,
+   "license": "CC0"
+  },
+  {
+   "title": "Bathroom door slam shut_more air.wav",
+   "author": "tlcolbe",
+   "freesound": 406635,
+   "license": "CC0"
+  },
+  {
+   "title": "Slamming Door",
+   "author": "Phoward5170",
+   "freesound": 449455,
+   "license": "CC0"
+  }
+ ],
+ "door_locked": [
+  {
+   "title": "Door Locked",
+   "author": "BenjaminNelan",
+   "freesound": 321087,
+   "license": "CC0"
+  },
+  {
+   "title": "Locked doorknob rattle 3.wav",
+   "author": "CastIronCarousel",
+   "freesound": 216875,
+   "license": "CC0"
+  },
+  {
+   "title": "Door Locked",
+   "author": "samuelcable",
+   "freesound": 348006,
+   "license": "CC0"
+  },
+  {
+   "title": "Door Jammed/Locked Free",
+   "author": "AardsReal",
+   "freesound": 842177,
+   "license": "CC0"
+  }
+ ],
+ "door_bang": [
+  {
+   "title": "DoorKick2.wav",
+   "author": "deoking",
+   "freesound": 411694,
+   "license": "CC0"
+  },
+  {
+   "title": "Accidental_Kicked_Door.wav",
+   "author": "Brokenphono",
+   "freesound": 344144,
+   "license": "CC0"
+  }
+ ],
+ "unlock": [
+  {
+   "title": "Unlocking Door with Key.wav",
+   "author": "baidonovan",
+   "freesound": 187341,
+   "license": "CC0"
+  },
+  {
+   "title": "Lock - strong door",
+   "author": "Vrymaa",
+   "freesound": 734641,
+   "license": "CC0"
+  }
+ ],
+ "drawer_open": [
+  {
+   "title": "Object_Drawer_Wood_Open.wav",
+   "author": "Nox_Sound",
+   "freesound": 486081,
+   "license": "CC0"
+  },
+  {
+   "title": "22-OpeningDrawer(Amp +).wav",
+   "author": "cazadordoblekatana",
+   "freesound": 429144,
+   "license": "CC0"
+  },
+  {
+   "title": "Opening/closing a wooden drawer",
+   "author": "fleurescence",
+   "freesound": 573161,
+   "license": "CC0"
+  },
+  {
+   "title": "Opening/closing a wooden drawer",
+   "author": "fleurescence",
+   "freesound": 573162,
+   "license": "CC0"
+  },
+  {
+   "title": "Opening/closing a wooden drawer",
+   "author": "fleurescence",
+   "freesound": 573154,
+   "license": "CC0"
+  }
+ ],
+ "drawer_close": [
+  {
+   "title": "Kitchen Drawer Close 3.wav",
+   "author": "RutgerMuller",
+   "freesound": 50735,
+   "license": "CC0"
+  },
+  {
+   "title": "Drawer CLOSE.wav",
+   "author": "cMilan",
+   "freesound": 426770,
+   "license": "CC0"
+  },
+  {
+   "title": "Silverware Drawer Close.aif",
+   "author": "timgormly",
+   "freesound": 142594,
+   "license": "CC0"
+  }
+ ],
+ "wardrobe": [
+  {
+   "title": "Closet Door.wav",
+   "author": "RutgerMuller",
+   "freesound": 51134,
+   "license": "CC0"
+  },
+  {
+   "title": "closet locked.ogg",
+   "author": "Kneeling",
+   "freesound": 642877,
+   "license": "CC0"
+  },
+  {
+   "title": "Closing Cabinet",
+   "author": "FaKexxChaos",
+   "freesound": 700419,
+   "license": "CC0"
+  }
+ ],
+ "bed_creak": [
+  {
+   "title": "Bed creak.wav",
+   "author": "MootMcnoodles",
+   "freesound": 444389,
+   "license": "CC0"
+  },
+  {
+   "title": "25. cama rechinando Bed creaking.wav",
+   "author": "cabusta9",
+   "freesound": 443796,
+   "license": "CC0"
+  }
+ ],
+ "pickup": [
+  {
+   "title": "Picking Up A Small Item",
+   "author": "qubodup",
+   "freesound": 822565,
+   "license": "CC0"
+  },
+  {
+   "title": "Grab_Key",
+   "author": "Mediasaur",
+   "freesound": 788053,
+   "license": "CC0"
+  },
+  {
+   "title": "Item wag",
+   "author": "Guinamun",
+   "freesound": 690623,
+   "license": "CC0"
+  }
+ ],
+ "keys": [
+  {
+   "title": "Pick Up Keys 1.wav",
+   "author": "sophiehall3535",
+   "freesound": 248037,
+   "license": "CC0"
+  },
+  {
+   "title": "Key Pickup",
+   "author": "RealSquink",
+   "freesound": 788310,
+   "license": "CC0"
+  },
+  {
+   "title": "door wood ext front door close solid +keys jingle.flac",
+   "author": "kyles",
+   "freesound": 637486,
+   "license": "CC0"
+  },
+  {
+   "title": "key_pickup",
+   "author": "ernyall",
+   "freesound": 785683,
+   "license": "CC0"
+  }
+ ],
+ "battery": [
+  {
+   "title": "click2.wav",
+   "author": "florian_reinke",
+   "freesound": 63532,
+   "license": "CC0"
+  },
+  {
+   "title": "battery_click.wav",
+   "author": "ludvique",
+   "freesound": 71850,
+   "license": "CC0"
+  },
+  {
+   "title": "Click_Button_BatteryRechargerFlashlight.wav",
+   "author": "sweet_niche",
+   "freesound": 617587,
+   "license": "CC0"
+  },
+  {
+   "title": "Snapping-Closed an Airpods Case",
+   "author": "redpanda69",
+   "freesound": 520954,
+   "license": "CC0"
+  }
+ ],
+ "flashlight": [
+  {
+   "title": "Flashlight Clicking On.wav",
+   "author": "baidonovan",
+   "freesound": 187335,
+   "license": "CC0"
+  },
+  {
+   "title": "Small_Flashlight_Click_on_Fast.wav",
+   "author": "Rudmer_Rotteveel",
+   "freesound": 502506,
+   "license": "CC0"
+  },
+  {
+   "title": "Torch Click 2",
+   "author": "BenjaminNelan",
+   "freesound": 410360,
+   "license": "CC0"
+  },
+  {
+   "title": "flashlightClick",
+   "author": "quetum",
+   "freesound": 770346,
+   "license": "CC0"
+  },
+  {
+   "title": "Flashlight Switch Click",
+   "author": "Ralph0o7",
+   "freesound": 690300,
+   "license": "CC0"
+  }
+ ],
+ "glass_break": [
+  {
+   "title": "Glass Break",
+   "author": "unfa",
+   "freesound": 221528,
+   "license": "CC0"
+  },
+  {
+   "title": "Glass Break",
+   "author": "avrahamy",
+   "freesound": 141563,
+   "license": "CC0"
+  },
+  {
+   "title": "Breaking a glass bottle",
+   "author": "dasebr",
+   "freesound": 212698,
+   "license": "CC0"
+  },
+  {
+   "title": "Breaking Glass Stereo",
+   "author": "GN2013",
+   "freesound": 199906,
+   "license": "CC0"
+  }
+ ],
+ "wood_break": [
+  {
+   "title": "Wood_Bones_Break_Slow_Juicy - 02.ogg",
+   "author": "LamaMakesMusic",
+   "freesound": 403646,
+   "license": "CC0"
+  },
+  {
+   "title": "Twigs Breaking",
+   "author": "Elements-Library",
+   "freesound": 683793,
+   "license": "CC0"
+  },
+  {
+   "title": "Wood Cracking - Ship Damage Taken Game SFX Alternate 2 of 2",
+   "author": "el_boss",
+   "freesound": 853277,
+   "license": "CC0"
+  }
+ ],
+ "lever": [
+  {
+   "title": "Circuit Breaker 3 DP.wav",
+   "author": "sribubba",
+   "freesound": 130154,
+   "license": "CC0"
+  },
+  {
+   "title": "Circuit Breaker 2 DP.wav",
+   "author": "sribubba",
+   "freesound": 130153,
+   "license": "CC0"
+  },
+  {
+   "title": "Circuit Breaker 1 SP.wav",
+   "author": "sribubba",
+   "freesound": 130152,
+   "license": "CC0"
+  },
+  {
+   "title": "switching_a_rattling_lever_with_room_ambience.wav",
+   "author": "mediatheksuche",
+   "freesound": 623712,
+   "license": "CC0"
+  }
+ ],
+ "fuse": [
+  {
+   "title": "Power Cord Unplug 1_2",
+   "author": "Joao_Janz",
+   "freesound": 477641,
+   "license": "CC0"
+  },
+  {
+   "title": "spark2.ogg",
+   "author": "Kneeling",
+   "freesound": 643861,
+   "license": "CC0"
+  }
+ ],
+ "power_down": [
+  {
+   "title": "Power Down",
+   "author": "noirenex",
+   "freesound": 159399,
+   "license": "CC0"
+  },
+  {
+   "title": "MachinePowerOff.flac",
+   "author": "Skylar1146",
+   "freesound": 395378,
+   "license": "CC0"
+  },
+  {
+   "title": "Cutting Power",
+   "author": "swag1773",
+   "freesound": 636578,
+   "license": "CC0"
+  }
+ ],
+ "power_up": [
+  {
+   "title": "Engine Power Up_1.wav",
+   "author": "NinjaSharkStudios",
+   "freesound": 609328,
+   "license": "CC0"
+  },
+  {
+   "title": "snowmobile lawnmower generator cord pull start",
+   "author": "kyles",
+   "freesound": 450929,
+   "license": "CC0"
+  }
+ ],
+ "light_buzz": [
+  {
+   "title": "Eletronic Static Buzz, Microwave Buzz, backrooms lv1 buzz",
+   "author": "AKkingStudio",
+   "freesound": 683810,
+   "license": "CC0"
+  }
+ ],
+ "bulb_pop": [
+  {
+   "title": "Flashbulb heavy",
+   "author": "schots",
+   "freesound": 382732,
+   "license": "CC0"
+  },
+  {
+   "title": "Lightbulb shattering",
+   "author": "LukaCafuka",
+   "freesound": 753899,
+   "license": "CC0"
+  },
+  {
+   "title": "5pop.wav",
+   "author": "an2netto",
+   "freesound": 379450,
+   "license": "CC0"
+  }
+ ],
+ "object_fall": [
+  {
+   "title": "Books Dropping",
+   "author": "deleted_user_3280201",
+   "freesound": 178611,
+   "license": "CC0"
+  },
+  {
+   "title": "briefcaseDroppingFloor.wav",
+   "author": "bertiehs",
+   "freesound": 271241,
+   "license": "CC0"
+  },
+  {
+   "title": "Pick Up Book Item",
+   "author": "qubodup",
+   "freesound": 822563,
+   "license": "CC0"
+  },
+  {
+   "title": "book_dropping_on_head.wav",
+   "author": "The_Legend_of_xD",
+   "freesound": 639776,
+   "license": "CC0"
+  }
+ ],
+ "frame_fall": [
+  {
+   "title": "Picture frame dropped on wood floor, shatters.wav",
+   "author": "SpliceSound",
+   "freesound": 156578,
+   "license": "CC0"
+  }
+ ],
+ "chair_scrape": [
+  {
+   "title": "chair5.wav",
+   "author": "lezaarth",
+   "freesound": 232240,
+   "license": "CC0"
+  },
+  {
+   "title": "Chair Movement 02.wav",
+   "author": "LilMati",
+   "freesound": 364988,
+   "license": "CC0"
+  },
+  {
+   "title": "Chair Movement 01.wav",
+   "author": "LilMati",
+   "freesound": 364985,
+   "license": "CC0"
+  },
+  {
+   "title": "Pushing chair.wav",
+   "author": "santiagogra",
+   "freesound": 532983,
+   "license": "CC0"
+  }
+ ],
+ "knock": [
+  {
+   "title": "Knock_on_door.wav",
+   "author": "Philip_Daniels",
+   "freesound": 244325,
+   "license": "CC0"
+  },
+  {
+   "title": "Knocking on Wood Door (1)",
+   "author": "Flem0527",
+   "freesound": 629987,
+   "license": "CC0"
+  },
+  {
+   "title": "Knock_wood",
+   "author": "Weak_Hero",
+   "freesound": 584941,
+   "license": "CC0"
+  },
+  {
+   "title": "Knock on door",
+   "author": "jankooiker",
+   "freesound": 237937,
+   "license": "CC0"
+  }
+ ],
+ "whoosh": [
+  {
+   "title": "Knife Swish 1.wav",
+   "author": "jawbutch",
+   "freesound": 344403,
+   "license": "CC0"
+  },
+  {
+   "title": "swoosh.wav",
+   "author": "vacuumfan7072",
+   "freesound": 264591,
+   "license": "CC0"
+  },
+  {
+   "title": "Knife Swish 2.wav",
+   "author": "jawbutch",
+   "freesound": 344408,
+   "license": "CC0"
+  },
+  {
+   "title": "Swoosh PS 033",
+   "author": "AudioPapkin",
+   "freesound": 744225,
+   "license": "CC0"
+  }
+ ],
+ "swipe": [
+  {
+   "title": "Swing Woosh",
+   "author": "Jofae",
+   "freesound": 389590,
+   "license": "CC0"
+  },
+  {
+   "title": "Basic Melee Swing / Miss / Whoosh",
+   "author": "SypherZent",
+   "freesound": 420668,
+   "license": "CC0"
+  },
+  {
+   "title": "Slash",
+   "author": "qubodup",
+   "freesound": 442903,
+   "license": "CC0"
+  },
+  {
+   "title": "samurai slash",
+   "author": "nekoninja",
+   "freesound": 370204,
+   "license": "CC0"
+  }
+ ],
+ "hit_body": [
+  {
+   "title": "body_hit.wav",
+   "author": "insanity54",
+   "freesound": 276600,
+   "license": "CC0"
+  },
+  {
+   "title": "Hit_Impact",
+   "author": "gulfstreamav",
+   "freesound": 842508,
+   "license": "CC0"
+  },
+  {
+   "title": "Clothed Body Hit 1 .wav",
+   "author": "Flem0527",
+   "freesound": 629977,
+   "license": "CC0"
+  },
+  {
+   "title": "punch2.wav",
+   "author": "deoking",
+   "freesound": 411693,
+   "license": "CC0"
+  }
+ ],
+ "bone_crack": [
+  {
+   "title": "Thud / Falling on wooden floor / Snapping, breaking neck",
+   "author": "Breviceps",
+   "freesound": 447922,
+   "license": "CC0"
+  },
+  {
+   "title": "Bone Crunch Fast.wav",
+   "author": "BrassKnucklesFilms",
+   "freesound": 192146,
+   "license": "CC0"
+  },
+  {
+   "title": "BoneSnaping.mp3",
+   "author": "samueleunimancer",
+   "freesound": 578874,
+   "license": "CC0"
+  }
+ ],
+ "heal": [
+  {
+   "title": "Zipper Weak Pull 01",
+   "author": "Rudmer_Rotteveel",
+   "freesound": 536238,
+   "license": "CC0"
+  }
+ ],
+ "inject": [
+  {
+   "title": "Syringe Pop",
+   "author": "Chaos-Kid",
+   "freesound": 740045,
+   "license": "CC0"
+  },
+  {
+   "title": "needle_drop_rhapsodize.aif",
+   "author": "rhapsodize",
+   "freesound": 688617,
+   "license": "CC0"
+  },
+  {
+   "title": "Two bursts of dental 3-in-1 syringe, slow.wav",
+   "author": "mht23SD",
+   "freesound": 707337,
+   "license": "CC0"
+  }
+ ],
+ "pills": [
+  {
+   "title": "Pill Bottle, Shaking",
+   "author": "AudioWay",
+   "freesound": 460153,
+   "license": "CC0"
+  },
+  {
+   "title": "Shaking Pills",
+   "author": "Froey_",
+   "freesound": 760714,
+   "license": "CC0"
+  }
+ ],
+ "paper": [
+  {
+   "title": "Paper Rustle",
+   "author": "BenjaminNelan",
+   "freesound": 353125,
+   "license": "CC0"
+  },
+  {
+   "title": "Paper Crinkle",
+   "author": "Jofae",
+   "freesound": 371897,
+   "license": "CC0"
+  },
+  {
+   "title": "turn_paper_sheet2.wav",
+   "author": "vibe_crc",
+   "freesound": 59880,
+   "license": "CC0"
+  },
+  {
+   "title": "Paper Crumple 1",
+   "author": "WasabiWielder",
+   "freesound": 334201,
+   "license": "CC0"
+  }
+ ],
+ "book_page": [
+  {
+   "title": "Book Turn Page 2.wav",
+   "author": "esperri",
+   "freesound": 119127,
+   "license": "CC0"
+  },
+  {
+   "title": "Book Turn Page 3.wav",
+   "author": "esperri",
+   "freesound": 119128,
+   "license": "CC0"
+  },
+  {
+   "title": "Page flip.wav",
+   "author": "cameronpride",
+   "freesound": 676674,
+   "license": "CC0"
+  },
+  {
+   "title": "Page Flip",
+   "author": "qubodup",
+   "freesound": 442858,
+   "license": "CC0"
+  }
+ ],
+ "chain": [
+  {
+   "title": "Steel chain hard clicking",
+   "author": "ani_music",
+   "freesound": 167916,
+   "license": "CC0"
+  },
+  {
+   "title": "Steel chain dragged, shower reverb",
+   "author": "ani_music",
+   "freesound": 167914,
+   "license": "CC0"
+  },
+  {
+   "title": "Steel Chain Dragged, Hard Reverb",
+   "author": "ani_music",
+   "freesound": 167912,
+   "license": "CC0"
+  },
+  {
+   "title": "Pulling Chain.wav",
+   "author": "Mrthenoronha",
+   "freesound": 405417,
+   "license": "CC0"
+  },
+  {
+   "title": "Chain rattling",
+   "author": "georgesavic",
+   "freesound": 593458,
+   "license": "CC0"
+  }
+ ],
+ "clock_chime": [
+  {
+   "title": "Grandfather clock.wav",
+   "author": "Ryding",
+   "freesound": 125968,
+   "license": "CC0"
+  },
+  {
+   "title": "Old clock ticking",
+   "author": "giddster",
+   "freesound": 414469,
+   "license": "CC0"
+  }
+ ],
+ "clock_tick": [
+  {
+   "title": "ticking of the clock 01.wav",
+   "author": "blukotek",
+   "freesound": 412751,
+   "license": "CC0"
+  }
+ ],
+ "phone_ring": [
+  {
+   "title": "Phone Ring",
+   "author": "NachtmahrTV",
+   "freesound": 572349,
+   "license": "CC0"
+  },
+  {
+   "title": "Ringtone: 1960s office phone",
+   "author": "knufds",
+   "freesound": 345805,
+   "license": "CC0"
+  }
+ ],
+ "radio_static": [
+  {
+   "title": "Radio.wav",
+   "author": "stereot7p",
+   "freesound": 155363,
+   "license": "CC0"
+  },
+  {
+   "title": "BluesHarp Loop Sound Radio static 200814_0031.wav",
+   "author": "szegvari",
+   "freesound": 530560,
+   "license": "CC0"
+  }
+ ],
+ "music_box": [
+  {
+   "title": "Music Box.wav",
+   "author": "Rickbrewin",
+   "freesound": 158206,
+   "license": "CC0"
+  },
+  {
+   "title": "Music Box 2 (G)",
+   "author": "sonically_sound",
+   "freesound": 625234,
+   "license": "CC0"
+  }
+ ],
+ "piano_creepy": [
+  {
+   "title": "Investigation Piano.wav",
+   "author": "furbyguy",
+   "freesound": 365025,
+   "license": "CC0"
+  },
+  {
+   "title": "Dissonant Piano Stinger.mp3",
+   "author": "XfiXy8",
+   "freesound": 467289,
+   "license": "CC0"
+  },
+  {
+   "title": "Horror piano strings glissando up high strings",
+   "author": "domestophonics",
+   "freesound": 423172,
+   "license": "CC0"
+  }
+ ],
+ "bell": [
+  {
+   "title": "Small Bell #2",
+   "author": "steffcaffrey",
+   "freesound": 452379,
+   "license": "CC0"
+  },
+  {
+   "title": "Bell ringing & dropping.wav",
+   "author": "Techienanna",
+   "freesound": 396551,
+   "license": "CC0"
+  },
+  {
+   "title": "Bell Ring",
+   "author": "Dalesome",
+   "freesound": 352927,
+   "license": "CC0"
+  }
+ ],
+ "baby_cry": [
+  {
+   "title": "Crying baby 2",
+   "author": "MBPL",
+   "freesound": 668793,
+   "license": "CC0"
+  },
+  {
+   "title": "baby cry.wav",
+   "author": "nektaria909",
+   "freesound": 393769,
+   "license": "CC0"
+  }
+ ],
+ "water_drip": [
+  {
+   "title": "03_Dripping_Water.wav",
+   "author": "15GPanskaSupsakPatrik",
+   "freesound": 461211,
+   "license": "CC0"
+  },
+  {
+   "title": "dripping tapwater",
+   "author": "STERREDEVRESSE",
+   "freesound": 513955,
+   "license": "CC0"
+  }
+ ],
+ "rope_creak": [
+  {
+   "title": "Creaking Metal Wire of Wooden Gate",
+   "author": "qubodup",
+   "freesound": 861827,
+   "license": "CC0"
+  }
+ ],
+ "house_creak": [
+  {
+   "title": "Wood Creak Single V3",
+   "author": "Rudmer_Rotteveel",
+   "freesound": 502511,
+   "license": "CC0"
+  },
+  {
+   "title": "Wood Creak Single V1",
+   "author": "Rudmer_Rotteveel",
+   "freesound": 502505,
+   "license": "CC0"
+  },
+  {
+   "title": "Wood Creak Single V2",
+   "author": "Rudmer_Rotteveel",
+   "freesound": 502504,
+   "license": "CC0"
+  },
+  {
+   "title": "Wood Floor Creak",
+   "author": "sthran",
+   "freesound": 572645,
+   "license": "CC0"
+  },
+  {
+   "title": "Wood Creak Single V10",
+   "author": "Rudmer_Rotteveel",
+   "freesound": 506665,
+   "license": "CC0"
+  },
+  {
+   "title": "Creaking in Room 6.wav",
+   "author": "Greg_Surr",
+   "freesound": 590169,
+   "license": "CC0"
+  }
+ ],
+ "glass_tap": [
+  {
+   "title": "hit - glass - window 01.wav",
+   "author": "Anthousai",
+   "freesound": 406261,
+   "license": "CC0"
+  },
+  {
+   "title": "Knocking On Screen, 01.wav",
+   "author": "LilMati",
+   "freesound": 368680,
+   "license": "CC0"
+  }
+ ],
+ "window_bang": [
+  {
+   "title": "Window Close.wav",
+   "author": "huddwink",
+   "freesound": 131310,
+   "license": "CC0"
+  },
+  {
+   "title": "Closing a window.mp3",
+   "author": "Caitlin_100",
+   "freesound": 365483,
+   "license": "CC0"
+  },
+  {
+   "title": "Window shut",
+   "author": "dilly_deelin",
+   "freesound": 784299,
+   "license": "CC0"
+  }
+ ],
+ "candle_out": [
+  {
+   "title": "blowing out candle.wav",
+   "author": "Reitanna",
+   "freesound": 242867,
+   "license": "CC0"
+  },
+  {
+   "title": "blow_4",
+   "author": "Dragon20C",
+   "freesound": 803296,
+   "license": "CC0"
+  },
+  {
+   "title": "BlowingRaspberry.mp3",
+   "author": "flowerdove2168",
+   "freesound": 466900,
+   "license": "CC0"
+  }
+ ],
+ "thunder": [
+  {
+   "title": "Thunderclap",
+   "author": "Fission9",
+   "freesound": 534023,
+   "license": "CC0"
+  },
+  {
+   "title": "Closeup Thunder Strike 01",
+   "author": "loganzsound",
+   "freesound": 840628,
+   "license": "CC0"
+  },
+  {
+   "title": "Thunder 12",
+   "author": "LukaCafuka",
+   "freesound": 795412,
+   "license": "CC0"
+  },
+  {
+   "title": "thunder11",
+   "author": "saha213131",
+   "freesound": 696550,
+   "license": "CC0"
+  }
+ ],
+ "car_door": [
+  {
+   "title": "car door close.wav",
+   "author": "monotraum",
+   "freesound": 208695,
+   "license": "CC0"
+  },
+  {
+   "title": "Door_Slam.aif",
+   "author": "aliceemily",
+   "freesound": 176308,
+   "license": "CC0"
+  }
+ ],
+ "car_start": [
+  {
+   "title": "engine_start.wav",
+   "author": "ReadeOnly",
+   "freesound": 186959,
+   "license": "CC0"
+  }
+ ],
+ "car_idle": [
+  {
+   "title": "Car driving ambience",
+   "author": "priesjensen",
+   "freesound": 495795,
+   "license": "CC0"
+  }
+ ],
+ "weep": [
+  {
+   "title": "women cry.wav",
+   "author": "LittleFinny",
+   "freesound": 238250,
+   "license": "CC0"
+  },
+  {
+   "title": "crazy crying.wav",
+   "author": "Reitanna",
+   "freesound": 344030,
+   "license": "CC0"
+  }
+ ],
+ "wail": [
+  {
+   "title": "Ghostly Moan.mp3",
+   "author": "SnowFightStudios",
+   "freesound": 643741,
+   "license": "CC0"
+  },
+  {
+   "title": "scary_moan2.wav",
+   "author": "titsher",
+   "freesound": 204965,
+   "license": "CC0"
+  },
+  {
+   "title": "creepy moan.wav",
+   "author": "titsher",
+   "freesound": 204966,
+   "license": "CC0"
+  }
+ ],
+ "ghost_whisper": [
+  {
+   "title": "Creepy Whispering",
+   "author": "RaspberryTickle",
+   "freesound": 234044,
+   "license": "CC0"
+  },
+  {
+   "title": "whispers and screams",
+   "author": "Fyodore",
+   "freesound": 211872,
+   "license": "CC0"
+  },
+  {
+   "title": "\"Ascend With Us\" creepy whisper",
+   "author": "BFMGames",
+   "freesound": 171102,
+   "license": "CC0"
+  },
+  {
+   "title": "LongWhisper",
+   "author": "EvaMusik",
+   "freesound": 832739,
+   "license": "CC0"
+  }
+ ],
+ "scream_ghost": [
+  {
+   "title": "Girl Screaming_01.wav",
+   "author": "tomattka",
+   "freesound": 400183,
+   "license": "CC0"
+  },
+  {
+   "title": "Girl_Two_Screams.wav",
+   "author": "tcrocker68",
+   "freesound": 235595,
+   "license": "CC0"
+  },
+  {
+   "title": "Girl_Scream_Short.wav",
+   "author": "tcrocker68",
+   "freesound": 235590,
+   "license": "CC0"
+  },
+  {
+   "title": "Scream Of A Woman",
+   "author": "synth2",
+   "freesound": 721498,
+   "license": "CC0"
+  },
+  {
+   "title": "heidi scream-05.25.J.wav",
+   "author": "martian",
+   "freesound": 245446,
+   "license": "CC0"
+  }
+ ],
+ "laugh_ghost": [
+  {
+   "title": "Witch's Laugh.wav",
+   "author": "NikoMyth",
+   "freesound": 348142,
+   "license": "CC0"
+  },
+  {
+   "title": "Witch Cackle",
+   "author": "AntumDeluge",
+   "freesound": 417826,
+   "license": "CC0"
+  },
+  {
+   "title": "Possessed Laugh.wav",
+   "author": "AgentA1cr",
+   "freesound": 559107,
+   "license": "CC0"
+  },
+  {
+   "title": "Possessed Laugh (Stereo).wav",
+   "author": "AgentA1cr",
+   "freesound": 559137,
+   "license": "CC0"
+  }
+ ],
+ "giggle": [
+  {
+   "title": "Young Female Child Laughing",
+   "author": "kim.headlee",
+   "freesound": 184616,
+   "license": "CC0"
+  },
+  {
+   "title": "child giggle",
+   "author": "RaspberryTickle",
+   "freesound": 203230,
+   "license": "CC0"
+  },
+  {
+   "title": "Child Giggle.MP3",
+   "author": "FunWithSound",
+   "freesound": 367493,
+   "license": "CC0"
+  },
+  {
+   "title": "Child's laugh 1 - medyk3D.wav",
+   "author": "medyk3D",
+   "freesound": 616088,
+   "license": "CC0"
+  },
+  {
+   "title": "jordan laugh cut1.mp3",
+   "author": "OGMeek",
+   "freesound": 69291,
+   "license": "CC0"
+  }
+ ],
+ "hum": [
+  {
+   "title": "Humming",
+   "author": "Engie201",
+   "freesound": 431524,
+   "license": "CC0"
+  },
+  {
+   "title": "horror humming.mp3",
+   "author": "ZHR%C3%98",
+   "freesound": 561195,
+   "license": "CC0"
+  },
+  {
+   "title": "9.Humming_girl.wav",
+   "author": "miguelab1998",
+   "freesound": 408584,
+   "license": "CC0"
+  }
+ ],
+ "child_whisper": [
+  {
+   "title": "Whispering I Know",
+   "author": "balloonhead",
+   "freesound": 362333,
+   "license": "CC0"
+  },
+  {
+   "title": "Whisper.wav",
+   "author": "AlexMiller2000",
+   "freesound": 620041,
+   "license": "CC0"
+  },
+  {
+   "title": "SFX_Spell_WhisperedShort-04",
+   "author": "Wavewire",
+   "freesound": 837459,
+   "license": "CC0"
+  }
+ ],
+ "growl": [
+  {
+   "title": "MonsterGrowl.mp3",
+   "author": "yatoimtop",
+   "freesound": 171178,
+   "license": "CC0"
+  },
+  {
+   "title": "Hybrid Monster Growl",
+   "author": "john129pats",
+   "freesound": 146558,
+   "license": "CC0"
+  },
+  {
+   "title": "Zombie Growl 5.wav",
+   "author": "tonsil5",
+   "freesound": 555417,
+   "license": "CC0"
+  },
+  {
+   "title": "MonsterSynthesizedGrowl_04",
+   "author": "Johnny25225",
+   "freesound": 718009,
+   "license": "CC0"
+  },
+  {
+   "title": "Monster Growl 1.wav",
+   "author": "jackieAZ",
+   "freesound": 262431,
+   "license": "CC0"
+  }
+ ],
+ "roar": [
+  {
+   "title": "cloverfield roar.wav",
+   "author": "icyjim",
+   "freesound": 476083,
+   "license": "CC0"
+  },
+  {
+   "title": "Didgeridoo Monster Roar",
+   "author": "Noxdl",
+   "freesound": 204912,
+   "license": "CC0"
+  },
+  {
+   "title": "Scary Monster Roar #2",
+   "author": "NicknameLarry",
+   "freesound": 489901,
+   "license": "CC0"
+  },
+  {
+   "title": "Monster Short Roar.wav",
+   "author": "ecfike",
+   "freesound": 132874,
+   "license": "CC0"
+  }
+ ],
+ "breath_monster": [
+  {
+   "title": "Male_Breath_Fast_Loop_Stereo.wav",
+   "author": "Nox_Sound",
+   "freesound": 554907,
+   "license": "CC0"
+  },
+  {
+   "title": "Dragons Dying Breath",
+   "author": "MickBoere",
+   "freesound": 276577,
+   "license": "CC0"
+  },
+  {
+   "title": "Creepy Breath",
+   "author": "Tommi3426",
+   "freesound": 353147,
+   "license": "CC0"
+  }
+ ],
+ "jumpscare": [
+  {
+   "title": "Jumpscare 1",
+   "author": "zombyKlr",
+   "freesound": 712416,
+   "license": "CC0"
+  },
+  {
+   "title": "Jumpscare Scream",
+   "author": "Breviceps",
+   "freesound": 587354,
+   "license": "CC0"
+  },
+  {
+   "title": "Jumpscare_Sound.wav",
+   "author": "TheTVBunny",
+   "freesound": 523984,
+   "license": "CC0"
+  },
+  {
+   "title": "TRTF2 Jumpscare Sound Remake 2.wav",
+   "author": "usar2",
+   "freesound": 678610,
+   "license": "CC0"
+  }
+ ],
+ "stinger": [
+  {
+   "title": "horror hit.wav",
+   "author": "Maximum993",
+   "freesound": 376204,
+   "license": "CC0"
+  },
+  {
+   "title": "Horror terror noise",
+   "author": "SamsterBirdies",
+   "freesound": 580319,
+   "license": "CC0"
+  }
+ ],
+ "vanish": [
+  {
+   "title": "Spectral Ghost Whisper Breeze Whoosh",
+   "author": "brktkrgll",
+   "freesound": 856169,
+   "license": "CC0"
+  },
+  {
+   "title": "Ghostly Whoosh - Horror Game UI",
+   "author": "TommasoMotteran",
+   "freesound": 850767,
+   "license": "CC0"
+  }
+ ],
+ "rain_window": [
+  {
+   "title": "rain against window 2",
+   "author": "bastipictures",
+   "freesound": 243781,
+   "license": "CC0"
+  },
+  {
+   "title": "Silencyo_CC_Rain on Window_Reverberant room_Medium Perspective .aif",
+   "author": "silencyo",
+   "freesound": 81819,
+   "license": "CC0"
+  }
+ ],
+ "rain_heavy": [
+  {
+   "title": "Rain from Indoors - Perfect loop",
+   "author": "samesamesame",
+   "freesound": 242889,
+   "license": "CC0"
+  }
+ ],
+ "wind_house": [
+  {
+   "title": "wind_howl2_stereo.wav",
+   "author": "swiftoid",
+   "freesound": 117611,
+   "license": "CC0"
+  },
+  {
+   "title": "howling_wind.wav",
+   "author": "juryduty",
+   "freesound": 185070,
+   "license": "CC0"
+  }
+ ],
+ "ambience_house": [
+  {
+   "title": "Dark Dungeon Ambience",
+   "author": "Kinoton",
+   "freesound": 516566,
+   "license": "CC0"
+  },
+  {
+   "title": "Horror Ambience",
+   "author": "Robster881",
+   "freesound": 333220,
+   "license": "CC0"
+  }
+ ],
+ "heartbeat": [
+  {
+   "title": "SLOW HEARTBEAT",
+   "author": "daandraait",
+   "freesound": 249716,
+   "license": "CC0"
+  }
+ ],
+ "menu_ambience": [
+  {
+   "title": "Dark Ambient Loop",
+   "author": "goulven",
+   "freesound": 371277,
+   "license": "CC0"
+  },
+  {
+   "title": "Horror Ambience",
+   "author": "Robster881",
+   "freesound": 333220,
+   "license": "CC0"
+  }
+ ],
+ "chase_loop": [
+  {
+   "title": "Horror Chase.wav",
+   "author": "jhooper",
+   "freesound": 141135,
+   "license": "CC0"
+  }
+ ],
+ "ui_hover": [
+  {
+   "title": "Hover 1",
+   "author": "plasterbrain",
+   "freesound": 237422,
+   "license": "CC0"
+  },
+  {
+   "title": "Button hover.wav",
+   "author": "Fachii",
+   "freesound": 338229,
+   "license": "CC0"
+  },
+  {
+   "title": "Soft UI Button Click",
+   "author": "Jummit",
+   "freesound": 528561,
+   "license": "CC0"
+  }
+ ],
+ "ui_click": [
+  {
+   "title": "SFX UI Button Click",
+   "author": "suntemple",
+   "freesound": 253168,
+   "license": "CC0"
+  },
+  {
+   "title": "UI Button Click",
+   "author": "benzix2",
+   "freesound": 467951,
+   "license": "CC0"
+  },
+  {
+   "title": "UI_Click.wav",
+   "author": "finix473",
+   "freesound": 546974,
+   "license": "CC0"
+  }
+ ],
+ "ui_back": [
+  {
+   "title": "guiclick2.ogg",
+   "author": "farpro",
+   "freesound": 264763,
+   "license": "CC0"
+  },
+  {
+   "title": "Click_Button_BatteryRechargerFlashlight.wav",
+   "author": "sweet_niche",
+   "freesound": 617587,
+   "license": "CC0"
+  }
+ ],
+ "ui_open": [
+  {
+   "title": "Opening a book",
+   "author": "mateusboga",
+   "freesound": 614081,
+   "license": "CC0"
+  },
+  {
+   "title": "Book Open.wav",
+   "author": "Jbricker1997",
+   "freesound": 426383,
+   "license": "CC0"
+  }
+ ]
+}

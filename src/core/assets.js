@@ -50,7 +50,7 @@ export async function loadTextureSet(name) {
 export async function loadImageTexture(name) {
   if (assets.textures[name]) return assets.textures[name];
   const t = await loadTex(`/textures/${name}.webp`, true);
-  if (t) { t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; }
+  if (t) { t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; t.flipY = false; t.needsUpdate = true; }   // applied to glTF UVs
   assets.textures[name] = t;
   return t;
 }
@@ -76,8 +76,25 @@ export function pbr(setName, opts = {}) {
   });
   if (opts.physical && m.isMeshPhysicalMaterial) { m.clearcoat = opts.clearcoat ?? 0; m.clearcoatRoughness = 0.15; m.sheen = opts.sheen ?? 0; }
   if (opts.envMap && assets.envMap) { m.envMap = assets.envMap; m.envMapIntensity = opts.envMapIntensity ?? 0.25; }
+  matte(m, opts.minRough ?? (opts.envMap ? 0.3 : 0.6));
   m.name = 'lib_' + setName;
   assets.mats[key] = m;
+  return m;
+}
+
+/** Clamp roughness from below (per pixel, after the roughness map) so surfaces stay diffuse under a torch. */
+export function matte(m, minRough) {
+  if (m.userData.matte) return m;
+  m.userData.matte = minRough;
+  const prev = m.onBeforeCompile;
+  m.onBeforeCompile = (sh, r) => {
+    prev && prev.call(m, sh, r);
+    sh.fragmentShader = sh.fragmentShader.replace('#include <roughnessmap_fragment>',
+      `#include <roughnessmap_fragment>
+  roughnessFactor = max(roughnessFactor, ${minRough.toFixed(2)});`);
+  };
+  const key = m.customProgramCacheKey ? m.customProgramCacheKey() : '';
+  m.customProgramCacheKey = () => key + '|matte' + minRough;
   return m;
 }
 
@@ -99,7 +116,7 @@ export function libMaterial(mname, original) {
   const n = mname.replace(/^M_/, '').replace(/\.\d+$/, '');
   const env = { envMap: true };
   switch (n) {
-    case 'wood_dark': return pbr('wood_dark', { physical: true, clearcoat: 0.35 });
+    case 'wood_dark': return pbr('wood_dark');
     case 'wood_light': return pbr('wood_light');
     case 'wood_old': return pbr('wood_old');
     case 'velvet_red': return pbr('velvet_red', { physical: true, sheen: 1 });
@@ -111,7 +128,7 @@ export function libMaterial(mname, original) {
     case 'brass': return pbr('brass', env);
     case 'iron': return pbr('iron', env);
     case 'metal_rust': return pbr('metal_rust', env);
-    case 'marble': return pbr('marble', { physical: true, clearcoat: 0.2 });
+    case 'marble': return pbr('marble', { minRough: 0.35 });
     case 'stone_floor': return pbr('stone_floor');
     case 'brick': return pbr('brick');
     case 'plaster': return pbr('plaster');
@@ -124,34 +141,35 @@ export function libMaterial(mname, original) {
     case 'book_b': return pbr('leather', { color: 0x3f7a4f });
     case 'book_c': return pbr('leather', { color: 0x3f4f9a });
     case 'book_d': return pbr('leather', { color: 0xc8a060 });
-    case 'porcelain': return plain('porcelain', { color: 0xe8e4dc, roughness: 0.12, metalness: 0, envMap: assets.envMap, envMapIntensity: 0.35 });
+    case 'porcelain': return plain('porcelain', { color: 0xe8e4dc, roughness: 0.32, metalness: 0, envMap: assets.envMap, envMapIntensity: 0.35 });
     case 'ivory': return plain('ivory', { color: 0xe6dcc4, roughness: 0.35, metalness: 0 });
-    case 'wax': return plain('wax', { color: 0xe8dcc0, roughness: 0.55, metalness: 0, emissive: 0x2a1a08, emissiveIntensity: 0.4 });
+    case 'wax': return plain('wax', { color: 0xe8dcc0, roughness: 0.55, metalness: 0, emissive: 0x2a1a08, emissiveIntensity: 0.08 });
     case 'rubber': return plain('rubber', { color: 0x0b0b0b, roughness: 0.85, metalness: 0 });
     case 'plastic': return plain('plastic', { color: 0x1a1a1a, roughness: 0.45, metalness: 0 });
     case 'black': return plain('black', { color: 0x050505, roughness: 0.7, metalness: 0 });
-    case 'lacquer': return plain('lacquer', { color: 0x040404, roughness: 0.18, metalness: 0, envMap: assets.envMap, envMapIntensity: 0.6 }, quality().physical ? THREE.MeshPhysicalMaterial : THREE.MeshStandardMaterial);
-    case 'chrome': return plain('chrome', { color: 0xc8c8cc, roughness: 0.18, metalness: 1, envMap: assets.envMap, envMapIntensity: 0.7 });
-    case 'mirror': return plain('mirror', { color: 0x9aa0a4, roughness: 0.03, metalness: 1, envMap: assets.envMap, envMapIntensity: 0.9 });
-    case 'glass': return plain('glass', { color: 0x9fb4b6, roughness: 0.05, metalness: 0, transparent: true, opacity: 0.22, depthWrite: false, envMap: assets.envMap, envMapIntensity: 0.8 });
+    case 'lacquer': return plain('lacquer', { color: 0x040404, roughness: 0.38, metalness: 0, envMap: assets.envMap, envMapIntensity: 0.6 }, quality().physical ? THREE.MeshPhysicalMaterial : THREE.MeshStandardMaterial);
+    case 'chrome': return matte(plain('chrome', { color: 0x9a9a9e, roughness: 0.35, metalness: 0.8, envMap: assets.envMap, envMapIntensity: 0.35 }), 0.35);
+    // an old, tarnished mirror: dark silvering, no torch-sized white-out
+    case 'mirror': return matte(plain('mirror', { color: 0x2c3033, roughness: 0.4, metalness: 0.35, envMap: assets.envMap, envMapIntensity: 0.25 }), 0.4);
+    case 'glass': return matte(plain('glass', { color: 0x9fb4b6, roughness: 0.3, metalness: 0, transparent: true, opacity: 0.18, depthWrite: false, envMap: assets.envMap, envMapIntensity: 0.3 }), 0.3);
     case 'gauge': case 'clockface': return pbr('paper', { color: 0xf0e8d0 });
     case 'red_cross': return plain('red_cross', { color: 0x8a0f0f, roughness: 0.5, metalness: 0 });
-    case 'carpaint': return plain('carpaint', { color: 0x1a1f26, roughness: 0.28, metalness: 0.6, envMap: assets.envMap, envMapIntensity: 0.8 }, quality().physical ? THREE.MeshPhysicalMaterial : THREE.MeshStandardMaterial);
+    case 'carpaint': return plain('carpaint', { color: 0x1a1f26, roughness: 0.4, metalness: 0.6, envMap: assets.envMap, envMapIntensity: 0.8 }, quality().physical ? THREE.MeshPhysicalMaterial : THREE.MeshStandardMaterial);
     case 'bulb':
-      return (emissive.bulb ||= plain('bulb', { color: 0xfff2d8, emissive: 0xffc27a, emissiveIntensity: 3, roughness: 0.3 }));
+      return (emissive.bulb ||= plain('bulb', { color: 0xfff2d8, emissive: 0xffc27a, emissiveIntensity: 1.2, roughness: 0.6 }));
     case 'flame':
-      return (emissive.flame ||= plain('flame', { color: 0xffa640, emissive: 0xff9a30, emissiveIntensity: 5, transparent: true, opacity: 0.9, depthWrite: false }, THREE.MeshBasicMaterial));
+      return (emissive.flame ||= plain('flame', { color: 0xd88a3a, transparent: true, opacity: 0.8, depthWrite: false }, THREE.MeshBasicMaterial));
     case 'ember':
-      return (emissive.ember ||= plain('ember', { color: 0x2a0a02, emissive: 0xff3a0a, emissiveIntensity: 2.5, roughness: 0.9 }));
+      return (emissive.ember ||= plain('ember', { color: 0x2a0a02, emissive: 0xff3a0a, emissiveIntensity: 1.1, roughness: 0.9 }));
     case 'window_glow':
-      return (emissive.window ||= plain('window_glow', { color: 0x1a1008, emissive: 0xffa550, emissiveIntensity: 1.6 }));
+      return (emissive.window ||= plain('window_glow', { color: 0x1a1008, emissive: 0xffa550, emissiveIntensity: 0.7 }));
     case 'headlight': return plain('headlight', { color: 0xffffff, emissive: 0xfff4dc, emissiveIntensity: 6 });
     case 'taillight': return plain('taillight', { color: 0x400000, emissive: 0xff1a0a, emissiveIntensity: 2.5 });
     case 'emissive_red': return plain('emissive_red', { color: 0x300000, emissive: 0xff2210, emissiveIntensity: 1.5 });
     default:
       if (n.startsWith('painting_')) {
         const t = assets.textures[n];
-        return plain(n, { map: t || null, roughness: 0.55, metalness: 0, color: 0xffffff });
+        return plain(n, { map: t || null, roughness: 0.85, metalness: 0, color: 0xffffff });
       }
       return original;
   }

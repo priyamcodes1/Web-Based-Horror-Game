@@ -1,0 +1,28 @@
+# dependencies / build output
+node_modules/
+dist/
+.vercel/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.log
+.claude/settings.local.json
+.claude/worktrees/
+
+# personal (Mara) — not part of the game
+mara.html
+public/models/mara*.glb
+src/viewer/
+tools/blender/mara*
+
+# asset pipeline: third-party source packs (GBs), Blender working files, caches, QA output
+tools/blender/assets/
+*.blend
+*.blend1
+__pycache__/
+tools/shots/
+tools/blender/_bake/
+tools/blender/_preview/
+tools/blender/_*.py
+tools/audio/_raw/

@@ -5,7 +5,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { cloneProp, applyLibrary } from '../core/assets.js';
 import { WT, FH, CEIL, C } from './level.js';
 
-const DYNAMIC = /(_Door|Drawer|Pendulum|Lever|_Lid|DisplayCase_Glass|_Hand|Ballerina|Crank|VentBoards|Window_Glass)/;
+const DYNAMIC = /(_Door|Drawer|Pendulum|Lever|_Lid|DisplayCase_Glass|DisplayCase_Item|_Hand|Ballerina|Crank|VentBoards)/;
 const NO_COLLIDE = new Set(['Painting_Portrait', 'Painting_Tall', 'Painting_Wide', 'Painting_Small', 'Sconce', 'Chandelier',
   'WallMirror', 'Curtain', 'CurtainRod', 'WindowFrame', 'TableLamp', 'HangingSheet', 'KitchenShelf', 'Rug', 'VentGrate', 'VentBoards']);
 
@@ -43,9 +43,9 @@ export class Furnisher {
     this.dynamicObjs = [];
   }
 
-  size(name) {
+  size(name, glb = 'furniture') {
     if (this.sizeCache[name]) return this.sizeCache[name];
-    const o = cloneProp('furniture', name);
+    const o = cloneProp(glb, name);
     o.updateMatrixWorld(true);
     const b = new THREE.Box3().setFromObject(o);
     const s = { w: b.max.x - b.min.x, d: b.max.z - b.min.z, h: b.max.y - b.min.y, minX: b.min.x, maxX: b.max.x, minZ: b.min.z, maxZ: b.max.z };
@@ -115,12 +115,13 @@ export class Furnisher {
 
   /** Instantiate + register a prop at world (x,z) with yaw rot on the room's floor (or y override). */
   spawn(name, room, layer, x, z, rot, opts = {}) {
-    const obj = cloneProp('furniture', name);
+    const obj = cloneProp(opts.glb || 'furniture', name);
     applyLibrary(obj);
     const y = (opts.y ?? 0) + layer * FH;
     obj.position.set(x, y, z);
     obj.rotation.y = rot;
     if (opts.scale) obj.scale.setScalar(opts.scale);
+    if (name === 'Bed') obj.scale.y *= 1.32;      // a tall old frame: room to crawl underneath and hide
     obj.updateMatrixWorld(true);
     obj.userData.prop = name;
     obj.userData.room = room;
@@ -215,7 +216,7 @@ export class Furnisher {
 
   /** Free-standing placement near the room centre (or random inside), rotation given or random-ish. */
   inRoom(name, room, layer, opts = {}) {
-    const sz = this.size(name);
+    const sz = this.size(name, opts.glb);
     const sc = opts.scale ?? 1;
     for (let t = 0; t < (opts.tries ?? 40); t++) {
       const rot = opts.rot ?? (opts.alignLong ? (room.w >= room.d ? 0 : Math.PI / 2) : this.rng.pick([0, Math.PI / 2, Math.PI, -Math.PI / 2]));
@@ -258,11 +259,34 @@ export class Furnisher {
       const cam = obj.getObjectByName('Wardrobe_HideCam');
       const p = new THREE.Vector3(); cam.getWorldPosition(p);
       const front = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), obj.rotation.y);
-      const hs = { id: room.hideSpots.length + room.index * 100, room, pos: p, front, yaw: obj.rotation.y,
+      // camera yaw 0 looks down -Z while the wardrobe opens toward +Z: face outward through the doors
+      const hs = { kind: 'wardrobe', id: room.hideSpots.length + room.index * 100, room, pos: p, front, yaw: obj.rotation.y + Math.PI,
         doorL: obj.getObjectByName('Wardrobe_DoorL'), doorR: obj.getObjectByName('Wardrobe_DoorR'), occupant: null, open: 0,
         stand: p.clone().addScaledVector(front, 0.9).setY(layer * FH) };
       room.hideSpots.push(hs);
-      room.interact.push({ kind: 'hide', ref: hs, pos: p.clone().setY(layer * FH + 1.2), radius: 1.4, label: 'Hide' });
+      room.interact.push({ kind: 'hide', ref: hs, pos: p.clone().setY(layer * FH + 1.2), radius: 1.4, label: 'Hide in the wardrobe' });
+    }
+    if (name === 'Bed') {
+      // crawl in from whichever long side has more floor; look back out through the gap under the frame
+      const right = new THREE.Vector3(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), obj.rotation.y);
+      const fwd = new THREE.Vector3(0, 0, 1).applyAxisAngle(new THREE.Vector3(0, 1, 0), obj.rotation.y);
+      const sc = obj.scale.x;
+      let best = null;
+      for (const sd of [1, -1]) {
+        const stand = obj.position.clone().addScaledVector(right, sd * 1.25 * sc).addScaledVector(fwd, 0.35 * sc);
+        const inside = stand.x > room.x + 0.4 && stand.x < room.x + room.w - 0.4 && stand.z > room.z + 0.4 && stand.z < room.z + room.d - 0.4;
+        const clear = Math.min(stand.x - room.x, room.x + room.w - stand.x, stand.z - room.z, room.z + room.d - stand.z);
+        if (inside && (!best || clear > best.clear)) best = { sd, stand, clear };
+      }
+      if (best) {
+        const out = right.clone().multiplyScalar(best.sd);
+        const pos = obj.position.clone().addScaledVector(right, best.sd * 0.28 * sc).addScaledVector(fwd, 0.2 * sc);
+        pos.y = layer * FH + 0.17;
+        const hs = { kind: 'bed', id: room.hideSpots.length + room.index * 100, room, pos, front: out, yaw: Math.atan2(-out.x, -out.z),
+          occupant: null, open: 0, bed: obj, stand: best.stand.setY(layer * FH) };
+        room.hideSpots.push(hs);
+        room.interact.push({ kind: 'hide', ref: hs, pos: best.stand.clone().setY(layer * FH + 0.6), radius: 1.3, label: 'Hide under the bed' });
+      }
     }
     if (name === 'Dresser' || name === 'Nightstand') {
       obj.traverse((o) => {
@@ -284,6 +308,7 @@ export class Furnisher {
     if (name === 'DisplayCase') {
       const it = obj.getObjectByName('DisplayCase_Item');
       const p = new THREE.Vector3(); it.getWorldPosition(p);
+      it.visible = false;                     // placeholder sphere: the real exhibit / key is placed here
       const dc = { obj, glass: obj.getObjectByName('DisplayCase_Glass'), itemPos: p, broken: false, item: null, room };
       (room.cases ||= []).push(dc);
       room.interact.push({ kind: 'case', ref: dc, pos: p, radius: 1.4, label: 'Display case' });
@@ -361,7 +386,6 @@ export class Furnisher {
       if (w.orient === 'h') rot = w.out < 0 ? 0 : Math.PI;
       else rot = w.out < 0 ? Math.PI / 2 : -Math.PI / 2;
       const frame = this.spawn('WindowFrame', room, w.layer, x, z, rot, { noFootprint: true, noCollide: true });
-      frame.userData.keep = true;
       const glass = frame.getObjectByName('Window_Glass');
       if (glass) glass.traverse((o) => { if (o.isMesh) { o.material = rainMat; o.castShadow = false; o.renderOrder = 1; } });
       // curtains on galleries, bedrooms and formal rooms
@@ -374,7 +398,6 @@ export class Furnisher {
           c.position.copy(base).addScaledVector(side, s * 1.02); c.position.y = y + (CEIL - 3.35);
           c.rotation.y = rot + (s > 0 ? Math.PI : 0) * 0;
           c.scale.x = s;   // mirror for the other side
-          c.userData.keep = true;
           room.group.add(c);
           c.traverse((o) => { if (o.isMesh) o.material.side = THREE.DoubleSide; });
         }

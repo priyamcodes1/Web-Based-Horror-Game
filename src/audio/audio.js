@@ -1,5 +1,8 @@
-// Audio engine: procedural horror sound design (Web Audio API) with optional sample overrides.
-// Any key in /audio/manifest.json that has files is played from samples instead of synthesized.
+// Audio engine: recorded sound library (public/audio, CC0 recordings mastered by tools/audio/fetch_sfx.py)
+// played through HRTF 3D panners with wall occlusion (low-pass + attenuation when there is no line of sight)
+// and per-room reverb sends. Variations are picked without immediate repeats and pitch-jittered.
+// Ambience loops crossfade into themselves. The old procedural synth remains only as a fallback
+// for any sound whose recordings are missing.
 import { settings } from '../core/settings.js';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -18,6 +21,9 @@ class AudioEngine {
     this.samples = new Map();
     this.loops = {};
     this.listenerPos = { x: 0, y: 0, z: 0 };
+    this.lastPick = new Map();
+    this.occluder = null;      // (pos) => { gain, cutoff, wet } - set by the game (line of sight / rooms)
+    this.room = { wet: 0.15 }; // listener's room acoustics (set by the game)
   }
 
   init() {
@@ -35,9 +41,12 @@ class AudioEngine {
       this.bus[k].connect(this.master);
     }
     this.reverb = c.createConvolver();
-    this.reverb.buffer = this.impulse(3.2, 2.6);
-    this.reverbOut = c.createGain(); this.reverbOut.gain.value = 0.55;
+    this.reverb.buffer = this.impulse(2.2, 3.2);
+    this.reverbOut = c.createGain(); this.reverbOut.gain.value = 0.5;
     this.reverb.connect(this.reverbOut).connect(this.master);
+    // the ambience bus ducks under stingers / screams
+    this.duckGain = c.createGain(); this.duckGain.gain.value = 1;
+    this.bus.amb.disconnect(); this.bus.amb.connect(this.duckGain).connect(this.master);
     this.noise = { white: this.noiseBuffer('white'), pink: this.noiseBuffer('pink'), brown: this.noiseBuffer('brown') };
     this.applyVolumes();
     this.ready = true;
@@ -60,19 +69,41 @@ class AudioEngine {
       const res = await fetch('/audio/manifest.json', { cache: 'no-cache' });
       if (!res.ok) return;
       const man = await res.json();
-      for (const [key, files] of Object.entries(man)) {
-        if (!Array.isArray(files) || !files.length) continue;
-        const bufs = [];
-        for (const f of files) {
+      // ambience + UI first, then everything else, a few files at a time (keeps the main thread smooth)
+      const first = ['ui_hover', 'ui_click', 'ui_back', 'menu_ambience', 'thunder', 'rain_window', 'wind_house', 'ambience_house'];
+      const keys = Object.keys(man).filter((k) => Array.isArray(man[k]) && man[k].length).sort((x, y) => (first.includes(y) - first.includes(x)));
+      const jobs = [];
+      for (const key of keys) for (const f of man[key]) jobs.push([key, f]);
+      let i = 0;
+      const worker = async () => {
+        while (i < jobs.length) {
+          const [key, f] = jobs[i++];
           try {
             const r = await fetch('/audio/' + f);
             if (!r.ok) continue;
-            bufs.push(await this.ctx.decodeAudioData(await r.arrayBuffer()));
+            const buf = await this.ctx.decodeAudioData(await r.arrayBuffer());
+            if (!this.samples.has(key)) this.samples.set(key, []);
+            this.samples.get(key).push(buf);
+            // upgrade a synth loop that started before its recording arrived
+            for (const [ln, spec] of Object.entries(LOOP_SAMPLES)) if (spec.key === key && this.loops[ln] && !this.loops[ln].sampled) this.restartLoop(ln);
           } catch (_) { /* missing file: synth fallback */ }
         }
-        if (bufs.length) this.samples.set(key, bufs);
-      }
+      };
+      await Promise.all([worker(), worker(), worker(), worker()]);
+      this.loaded = true;
     } catch (_) { /* no manifest: fully procedural */ }
+  }
+
+  /** Random variation of a sample key, never the same file twice in a row. */
+  pickBuf(key) {
+    const bufs = this.samples.get(key);
+    if (!bufs || !bufs.length) return null;
+    if (bufs.length === 1) return bufs[0];
+    let i;
+    const last = this.lastPick.get(key);
+    do { i = (Math.random() * bufs.length) | 0; } while (i === last);
+    this.lastPick.set(key, i);
+    return bufs[i];
   }
 
   // ------------------------------------------------------------------ buffers
@@ -113,21 +144,28 @@ class AudioEngine {
     g.gain.value = opts.vol ?? 1;
     let tail = g;
     const bus = this.bus[opts.bus || 'sfx'];
+    let occ = null;
     if (opts.pos) {
-      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = opts.muffle ? 900 : 20000;
+      occ = this.occluder ? this.occluder(opts.pos) : null;
+      const lp = c.createBiquadFilter(); lp.type = 'lowpass';
+      lp.frequency.value = opts.muffle ? 900 : (occ ? occ.cutoff : 20000); lp.Q.value = 0.5;
+      const og = c.createGain(); og.gain.value = occ ? occ.gain : 1;
       const p = c.createPanner();
       p.panningModel = 'HRTF'; p.distanceModel = 'inverse';
-      p.refDistance = opts.ref ?? 1.5; p.maxDistance = 60; p.rolloffFactor = opts.rolloff ?? 1.2;
+      p.refDistance = opts.ref ?? 1.5; p.maxDistance = 80; p.rolloffFactor = opts.rolloff ?? 1.15;
       p.positionX.value = opts.pos.x; p.positionY.value = opts.pos.y; p.positionZ.value = opts.pos.z;
-      g.connect(lp).connect(p).connect(bus);
+      g.connect(lp).connect(og).connect(p).connect(bus);
       tail = p;
-      g._panner = p; g._lp = lp;
+      g._panner = p; g._lp = lp; g._og = og;
     } else {
       g.connect(bus);
     }
-    if (opts.reverb) {
-      const s = c.createGain(); s.gain.value = opts.reverb;
+    // reverb: the requested amount scaled by the listener's room, plus more when the source is behind walls
+    const wet = (opts.reverb ?? 0) * (opts.pos ? 0.6 + this.room.wet * 2.6 : 1) + (occ ? occ.wet : 0);
+    if (wet > 0.01) {
+      const s = c.createGain(); s.gain.value = wet;
       tail.connect(s).connect(this.reverb);
+      g._wet = s;
     }
     return g;
   }
@@ -164,20 +202,37 @@ class AudioEngine {
   /** Play a named sound. opts: {pos, vol, muffle, bus, surface, ...}. Returns handle with setPos/stop. */
   play(name, opts = {}) {
     if (!this.ready) return null;
-    const bufs = this.samples.get(name);
-    if (bufs) return this.playSample(pick(bufs), opts);
+    const m = resolve(name, opts);
+    if (m) {
+      const buf = this.pickBuf(m.key);
+      if (buf) {
+        return this.playSample(buf, { ...opts, vol: (opts.vol ?? 1) * (m.vol ?? 1), rate: opts.rate ?? (m.rate ? m.rate() : rnd(0.95, 1.05)),
+          bus: opts.bus || m.bus || BUS_OF[name] || 'sfx', reverb: opts.reverb ?? m.reverb ?? REVERB_OF[name] ?? 0.12, dur: m.dur, name, fx: m.fx, sub: m.sub, grit: m.grit });
+      }
+    }
     const fn = SYNTH[name];
     if (!fn) return null;
     const o = this.out({ ...opts, bus: opts.bus || BUS_OF[name] || 'sfx', reverb: opts.reverb ?? REVERB_OF[name] ?? 0.12 });
     const dur = fn(this, o, opts) || 1;
-    const handle = {
-      node: o,
-      setPos: (p) => { if (o._panner) { const t = this.ctx.currentTime; o._panner.positionX.setTargetAtTime(p.x, t, 0.05); o._panner.positionY.setTargetAtTime(p.y, t, 0.05); o._panner.positionZ.setTargetAtTime(p.z, t, 0.05); } },
-      setMuffle: (m) => { if (o._lp) o._lp.frequency.setTargetAtTime(m ? 900 : 20000, this.ctx.currentTime, 0.08); },
-      stop: () => { try { o.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05); } catch (_) { /* noop */ } },
-    };
     setTimeout(() => { try { o.disconnect(); } catch (_) { /* noop */ } }, (dur + 3.5) * 1000);
-    return handle;
+    return this.handle(o, null);
+  }
+
+  handle(o, src) {
+    return {
+      node: o, src,
+      setPos: (p) => {
+        if (!o._panner) return;
+        const t = this.ctx.currentTime;
+        o._panner.positionX.setTargetAtTime(p.x, t, 0.05); o._panner.positionY.setTargetAtTime(p.y, t, 0.05); o._panner.positionZ.setTargetAtTime(p.z, t, 0.05);
+        if (this.occluder && o._og) {
+          const occ = this.occluder(p);
+          o._og.gain.setTargetAtTime(occ.gain, t, 0.12); o._lp.frequency.setTargetAtTime(occ.cutoff, t, 0.12);
+        }
+      },
+      setMuffle: (m) => { if (o._lp) o._lp.frequency.setTargetAtTime(m ? 900 : 20000, this.ctx.currentTime, 0.08); },
+      stop: (fade = 0.05) => { try { o.gain.setTargetAtTime(0, this.ctx.currentTime, fade); if (src) src.stop(this.ctx.currentTime + fade * 6); } catch (_) { /* noop */ } },
+    };
   }
 
   playSample(buf, opts) {
@@ -185,13 +240,41 @@ class AudioEngine {
     const o = this.out({ ...opts, bus: opts.bus || 'sfx', reverb: opts.reverb ?? 0.1 });
     const s = c.createBufferSource(); s.buffer = buf;
     s.playbackRate.value = opts.rate ?? rnd(0.96, 1.04);
-    s.connect(o); s.start();
-    return {
-      node: o,
-      setPos: (p) => { if (o._panner) { o._panner.positionX.value = p.x; o._panner.positionY.value = p.y; o._panner.positionZ.value = p.z; } },
-      setMuffle: (m) => { if (o._lp) o._lp.frequency.value = m ? 900 : 20000; },
-      stop: () => { try { s.stop(); } catch (_) { /* noop */ } },
-    };
+    if (opts.fx === 'ghost') {
+      // an unnatural voice: an octave-down rumble under it, a slightly detuned double a hair behind it,
+      // a little grit - one recording becomes something too big for the throat it comes from
+      const r = s.playbackRate.value, t0 = c.currentTime;
+      const grit = this.shaper(opts.grit ?? 2.5);
+      const bus = c.createGain(); bus.gain.value = 0.8;
+      s.connect(bus);
+      const sub = c.createBufferSource(); sub.buffer = buf; sub.playbackRate.value = r * 0.5;
+      const subLp = this.filt('lowpass', 1100, 0.6), subG = c.createGain(); subG.gain.value = opts.sub ?? 0.5;
+      sub.connect(subLp).connect(subG).connect(bus);
+      const dbl = c.createBufferSource(); dbl.buffer = buf; dbl.playbackRate.value = r * 1.013;
+      const dly = c.createDelay(0.1); dly.delayTime.value = 0.031; const dblG = c.createGain(); dblG.gain.value = 0.38;
+      dbl.connect(dly).connect(dblG).connect(bus);
+      bus.connect(grit).connect(o);
+      const len = buf.duration / r;
+      sub.start(t0); sub.stop(t0 + len + 0.05);
+      dbl.start(t0); dbl.stop(t0 + len / 1.013 + 0.1);
+      // the sub layer is twice as long: fade it out with the main voice
+      subG.gain.setValueAtTime(subG.gain.value, t0 + len * 0.85); subG.gain.linearRampToValueAtTime(0.0001, t0 + len);
+    } else s.connect(o);
+    if (opts.dur && opts.dur < buf.duration) {
+      // trimmed (e.g. a quick door creak): play the head of the recording with a short fade
+      const t = c.currentTime, v = o.gain.value;
+      s.start(t, 0, opts.dur + 0.25);
+      o.gain.setValueAtTime(v, t + opts.dur);
+      o.gain.linearRampToValueAtTime(0.0001, t + opts.dur + 0.25);
+    } else s.start();
+    if (/scream|stinger|jumpscare|roar/.test(opts.name || '')) this.duck(0.45, 1.6);
+    s.onended = () => { try { o.disconnect(); } catch (_) { /* noop */ } };
+    return this.handle(o, s);
+  }
+
+  duck(level, secs) {
+    const t = this.ctx.currentTime, g = this.duckGain.gain;
+    g.cancelScheduledValues(t); g.setTargetAtTime(level, t, 0.05); g.setTargetAtTime(1, t + secs, 0.8);
   }
 
   updateListener(pos, fwd, up) {
@@ -211,21 +294,63 @@ class AudioEngine {
   // ------------------------------------------------------------------ loops (ambience / music)
   startLoop(name, opts = {}) {
     if (!this.ready || this.loops[name]) return this.loops[name];
-    const fn = LOOPS[name];
-    if (!fn) return null;
-    const bufs = this.samples.get(name);
+    const spec = LOOP_SAMPLES[name];
+    const bufs = spec && this.samples.get(spec.key);
     let h;
-    if (bufs) {
-      const c = this.ctx;
-      const g = c.createGain(); g.gain.value = 0; g.connect(this.bus[opts.bus || 'amb']);
-      const s = c.createBufferSource(); s.buffer = bufs[0]; s.loop = true; s.connect(g); s.start();
-      h = { gain: g, set: () => {}, stop: () => { g.gain.setTargetAtTime(0, c.currentTime, 0.4); setTimeout(() => s.stop(), 2500); } };
+    if (bufs && bufs.length) {
+      h = this.sampleLoop(bufs, { bus: opts.bus || spec.bus || 'amb', set: spec.set });
+      h.sampled = true;
     } else {
+      const fn = LOOPS[name];
+      if (!fn) return null;
       h = fn(this, opts);
     }
-    h.gain.gain.setTargetAtTime(opts.vol ?? 1, this.ctx.currentTime, opts.fade ?? 1.5);
+    h.vol = opts.vol ?? 1;
+    h.gain.gain.setTargetAtTime(h.vol, this.ctx.currentTime, opts.fade ?? 1.5);
     this.loops[name] = h;
     return h;
+  }
+
+  restartLoop(name) {
+    const h = this.loops[name];
+    if (!h) return;
+    const vol = h.vol ?? 1;
+    this.stopLoop(name);
+    this.startLoop(name, { vol, fade: 2 });
+  }
+
+  /** Endless loop from recordings: each pass crossfades into the next (random file / start offset). */
+  sampleLoop(bufs, { bus = 'amb', set = null } = {}) {
+    const c = this.ctx;
+    const g = c.createGain(); g.gain.value = 0.0001;
+    const lp = this.filt('lowpass', 20000, 0.5);
+    g.connect(lp).connect(this.bus[bus]);
+    let alive = true, rate = 1, timer = null;
+    const X = 2.5;   // crossfade seconds
+    const voices = [];
+    const next = () => {
+      if (!alive) return;
+      const buf = bufs[(Math.random() * bufs.length) | 0];
+      const src = c.createBufferSource(); src.buffer = buf; src.playbackRate.value = rate;
+      const vg = c.createGain(); const t = c.currentTime;
+      const off = buf.duration > 20 ? Math.random() * buf.duration * 0.4 : 0;
+      const play = Math.max(X * 2 + 0.5, (buf.duration - off) / rate);
+      vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(1, t + X);
+      vg.gain.setValueAtTime(1, t + play - X); vg.gain.linearRampToValueAtTime(0, t + play);
+      src.loop = buf.duration < X * 2 + 0.5;
+      src.connect(vg).connect(g); src.start(t, off); src.stop(t + play + 0.1);
+      voices.push(src); src.onended = () => { const i = voices.indexOf(src); if (i >= 0) voices.splice(i, 1); };
+      timer = setTimeout(next, Math.max(1000, (play - X) * 1000));
+    };
+    next();
+    return {
+      gain: g,
+      set: (x) => {
+        if (set === 'rate') { rate = 0.85 + x * 0.6; for (const v of voices) v.playbackRate.setTargetAtTime(rate, c.currentTime, 0.4); }
+        else if (set === 'muffle') lp.frequency.setTargetAtTime(x ? 1200 : 20000, c.currentTime, 0.3);
+      },
+      stop: () => { alive = false; clearTimeout(timer); g.gain.setTargetAtTime(0, c.currentTime, 0.6); setTimeout(() => voices.forEach((v) => { try { v.stop(); } catch (_) { /* noop */ } }), 3500); },
+    };
   }
 
   setLoop(name, vol, param) {
@@ -244,6 +369,113 @@ class AudioEngine {
 
   stopAll() { for (const k of Object.keys(this.loops)) this.stopLoop(k); }
 }
+
+// ============================================================================ recording map
+// game sound name -> sample key (+ per-sound gain / pitch / trim). Missing keys fall back to the synth.
+const R = (key, extra = {}) => ({ key, ...extra });
+const jitter = (a, b) => () => rnd(a, b);
+const SURF_KEY = { wood: 'step_wood', carpet: 'step_carpet', tile: 'step_tile', stone: 'step_stone', metal: 'step_stone', gravel: 'step_stone', mud: 'step_carpet' };
+function resolve(name, o) {
+  switch (name) {
+    case 'footstep': {
+      const i = o.intensity ?? 0.7;
+      const key = i >= 1.15 && o.surface !== 'carpet' ? 'step_run' : SURF_KEY[o.surface] || 'step_wood';
+      return R(key, { vol: 0.25 + 0.6 * Math.min(1.3, i), rate: jitter(0.9 + i * 0.05, 1.04 + i * 0.05), reverb: 0.08 });
+    }
+    case 'heavy_step': return R('step_heavy', { vol: 1.1, rate: jitter(0.8, 0.92), reverb: 0.2 });
+    case 'door_creak': return R('door_open', { vol: 0.85, dur: o.dur ? o.dur + 0.4 : undefined, reverb: 0.2 });
+    case 'door_close': return R('door_close', { vol: 0.9 });
+    case 'door_slam': return R('door_slam', { vol: 1.0, reverb: 0.35 });
+    case 'door_locked': return R('door_locked', { vol: 0.8 });
+    case 'door_bang': return R('door_bang', { vol: 1, reverb: 0.3 });
+    case 'unlock': return R('unlock', { vol: 0.9 });
+    case 'drawer': return R(o.close ? 'drawer_close' : 'drawer_open', { vol: 0.8 });
+    case 'hide_in': case 'hide_out': return R('wardrobe', { vol: 0.75, dur: 1.4 });
+    case 'bed_creak': return R('bed_creak', { vol: 0.6 });
+    case 'cloth': return R('cloth', { vol: 0.6 });
+    case 'crawl': return R('crawl', { vol: 0.7 });
+    case 'pickup': return R('pickup', { vol: 0.8 });
+    case 'key_pickup': return R('keys', { vol: 0.95 });
+    case 'battery': return R('battery', { vol: 0.9 });
+    case 'flashlight': return R('flashlight', { vol: 0.75, rate: jitter(0.97, 1.05) });
+    case 'glass_break': return R('glass_break', { vol: 0.95, reverb: 0.25 });
+    case 'wood_break': return R('wood_break', { vol: 1 });
+    case 'fuse_insert': return R('fuse', { vol: 0.9 });
+    case 'lever': return R('lever', { vol: 1 });
+    case 'power_down': return R('power_down', { vol: 1 });
+    case 'power_up': return R('power_up', { vol: 1 });
+    case 'light_buzz': return R('light_buzz', { vol: 0.8 });
+    case 'bulb_pop': return R('bulb_pop', { vol: 0.9 });
+    case 'thunder': return R('thunder', { vol: o.close ? 1.2 : 0.75, rate: o.close ? jitter(0.95, 1.02) : jitter(0.8, 0.92), reverb: 0.08 });
+    case 'whisper': return R('ghost_whisper', { fx: 'ghost', sub: 0.3, vol: 1, reverb: 0.5 });
+    case 'wail': return R('wail', { fx: 'ghost', vol: 1, rate: jitter(0.86, 0.96), reverb: 0.6 });
+    case 'weep': return R('weep', { fx: 'ghost', sub: 0.35, vol: 0.9, rate: jitter(0.88, 0.97), reverb: 0.55 });
+    case 'scream': return R('scream_ghost', { fx: 'ghost', sub: 0.55, grit: 3.5, vol: 1.1, rate: jitter(0.86, 0.95), reverb: 0.7 });
+    case 'laugh': return R('laugh_ghost', { fx: 'ghost', sub: 0.6, vol: 1, rate: jitter(0.86, 0.95), reverb: 0.5 });
+    case 'giggle': return R('giggle', { fx: 'ghost', sub: 0.25, vol: 0.95, rate: jitter(0.95, 1.08), reverb: 0.55 });
+    case 'hum': return R('hum', { fx: 'ghost', sub: 0.3, vol: 0.8, rate: jitter(0.9, 0.98), reverb: 0.6 });
+    case 'child_whisper': return R('child_whisper', { fx: 'ghost', sub: 0.25, vol: 1, reverb: 0.5 });
+    case 'growl': return R('growl', { fx: 'ghost', sub: 0.7, grit: 4, vol: 1, rate: jitter(0.8, 0.92), reverb: 0.3 });
+    case 'roar': return R('roar', { fx: 'ghost', sub: 0.8, grit: 5, vol: 1.2, rate: jitter(0.82, 0.92), reverb: 0.4 });
+    case 'monster_breath': return R('breath_monster', { fx: 'ghost', sub: 0.6, vol: 0.9, rate: jitter(0.85, 0.95) });
+    case 'chain': return R('chain', { vol: 0.9, reverb: 0.3 });
+    case 'stinger': return R('stinger', { vol: 0.9, bus: 'music', reverb: 0.3 });
+    case 'jumpscare': return R('jumpscare', { fx: 'ghost', sub: 0.6, grit: 4, vol: 1.25, rate: jitter(0.9, 1.0), reverb: 0.2, bus: 'sfx' });
+    case 'knock': return R('knock', { vol: 1, reverb: 0.3 });
+    case 'clock_chime': return R('clock_chime', { vol: 0.9, reverb: 0.5 });
+    case 'piano': return R('piano_creepy', { vol: 0.9, bus: 'music', reverb: 0.5 });
+    case 'musicbox': return R('music_box', { vol: 0.9, bus: 'music', reverb: 0.4, rate: jitter(0.93, 0.97) });
+    case 'gasp': return R('gasp', { vol: 0.8, bus: 'voice' });
+    case 'breath_in': case 'breath_out': return R('breath_heavy', { vol: 0.35 + 0.25 * Math.min(1.5, o.intensity ?? 1), bus: 'voice', reverb: 0.05 });
+    case 'breath_scared': return R('breath_scared', { vol: 0.5, bus: 'voice', reverb: 0.05 });
+    case 'hurt': return R('hurt', { vol: 0.9, bus: 'voice' });
+    case 'victim_scream': return R('scream_victim', { vol: 1, bus: 'voice', reverb: 0.4 });
+    case 'cleaver': return R('swipe', { vol: 0.9 });
+    case 'hit': return R('hit_body', { vol: 1 });
+    case 'bone': return R('bone_crack', { vol: 1 });
+    case 'body_fall': return R('land', { vol: 1 });
+    case 'whoosh': return R('whoosh', { vol: 0.7 });
+    case 'slide': return R('slide', { vol: 0.8 });
+    case 'vanish': return R('vanish', { vol: 0.85, reverb: 0.5 });
+    case 'heal': return R('heal', { vol: 0.8 });
+    case 'inject': return R('inject', { vol: 0.9 });
+    case 'pills': return R('pills', { vol: 0.8 });
+    case 'paper': return R('paper', { vol: 0.8 });
+    case 'page': return R('book_page', { vol: 0.8, bus: 'ui' });
+    case 'book_open': return R('ui_open', { vol: 0.8, bus: 'ui' });
+    case 'car_door': return R('car_door', { vol: 1 });
+    case 'car_start': return R('car_start', { vol: 1 });
+    case 'ui_hover': return R('ui_hover', { vol: 0.5, bus: 'ui', reverb: 0 });
+    case 'ui_click': return R('ui_click', { vol: 0.7, bus: 'ui', reverb: 0 });
+    case 'ui_back': return R('ui_back', { vol: 0.7, bus: 'ui', reverb: 0 });
+    case 'object_fall': return R('object_fall', { vol: 1, reverb: 0.25 });
+    case 'frame_fall': return R('frame_fall', { vol: 1, reverb: 0.25 });
+    case 'chair_scrape': return R('chair_scrape', { vol: 0.9, reverb: 0.25 });
+    case 'phone_ring': return R('phone_ring', { vol: 0.9, reverb: 0.3 });
+    case 'radio_static': return R('radio_static', { vol: 0.7 });
+    case 'bell': return R('bell', { vol: 0.9, reverb: 0.4 });
+    case 'baby_cry': return R('baby_cry', { vol: 0.7, rate: jitter(0.85, 0.92), reverb: 0.6 });
+    case 'rope_creak': return R('rope_creak', { vol: 0.8 });
+    case 'house_creak': return R('house_creak', { vol: 0.8, reverb: 0.35 });
+    case 'glass_tap': return R('glass_tap', { vol: 0.9 });
+    case 'window_bang': return R('window_bang', { vol: 1, reverb: 0.3 });
+    case 'candle_out': return R('candle_out', { vol: 0.8 });
+    case 'crucifix': return R('bell', { vol: 0.8, rate: jitter(0.7, 0.75), reverb: 0.7 });
+    default: return null;
+  }
+}
+const LOOP_SAMPLES = {
+  rain: { key: 'rain_window', set: 'muffle' },
+  rain_out: { key: 'rain_heavy' },
+  wind: { key: 'wind_house' },
+  drone: { key: 'ambience_house' },
+  heartbeat: { key: 'heartbeat', set: 'rate', bus: 'sfx' },
+  chase: { key: 'chase_loop', bus: 'music' },
+  menu: { key: 'menu_ambience', bus: 'music' },
+  car: { key: 'car_idle' },
+  clock: { key: 'clock_tick' },
+  drip: { key: 'water_drip' },
+};
 
 // ============================================================================ synth voices
 const BUS_OF = {

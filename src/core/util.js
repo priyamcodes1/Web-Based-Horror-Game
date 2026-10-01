@@ -72,5 +72,6 @@ export function tileFbm(x, y, period, oct = 4, seed = 0) {
   return s / n;
 }
 
-export const nextFrame = () => new Promise((r) => requestAnimationFrame(() => r()));
+// setTimeout (not rAF) so loading keeps progressing in background tabs
+export const nextFrame = () => new Promise((r) => setTimeout(r, 0));
 export const wait = (ms) => new Promise((r) => setTimeout(r, ms));
