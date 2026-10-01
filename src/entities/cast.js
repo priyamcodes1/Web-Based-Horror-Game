@@ -213,7 +213,7 @@ uniform float uLegR[${2 * NB}];`)
  *  rounder and slimmer: drop and roll each clavicle, pull the shoulder joint in toward the neck, and thin the upper
  *  arm's cross-section (its length, and the forearm, untouched). Applied after the clip every frame (the clips
  *  key every bone), guarded so a bone no clip writes is never offset twice. */
-const SHOULDER = { drop: THREE.MathUtils.degToRad(19), roll: THREE.MathUtils.degToRad(10), narrow: 0.8, slim: 0.9 };
+const SHOULDER = { drop: THREE.MathUtils.degToRad(19), roll: THREE.MathUtils.degToRad(10), narrow: 0.8, slim: 0.9, armKeep: 0.25 };
 function relaxShoulders(root, bones) {
   const ops = [];
   // re-apply `fn` on top of whatever the mixer left in `v` (a Vector3/Quaternion), never on top of itself
@@ -230,6 +230,13 @@ function relaxShoulders(root, bones) {
     const P = clav.parent.getWorldQuaternion(new THREE.Quaternion());
     const D = P.clone().invert().multiply(R).multiply(P);                 // the same turn, in the clavicle's parent space
     guarded(clav.quaternion, (q) => q.premultiply(D));
+    // ...but the arm must not swing in with it (the hands would cross in front of the hips): turn the upper arm
+    // back, keeping only a quarter of the clavicle's turn so the arms hang a touch closer than the clips have them
+    const keep = new THREE.Quaternion().slerp(R, SHOULDER.armKeep);
+    const E = keep.multiply(R.clone().invert());                          // world: undo most of R on the arm
+    const Pc = P.clone().multiply(D).multiply(clav.quaternion);          // the clavicle's world turn after the drop
+    const Darm = Pc.clone().invert().multiply(E).multiply(Pc);           // ...expressed in the upper arm's parent space
+    guarded(arm.quaternion, (q) => q.premultiply(Darm));
     guarded(arm.position, (p) => p.multiplyScalar(SHOULDER.narrow));      // shoulder joint closer to the neck
     if (fore) {
       // slimmer upper arm: scale its two thickness axes, give the forearm the inverse so only the deltoid/biceps change
