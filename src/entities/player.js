@@ -6,6 +6,7 @@ import { audio } from '../audio/audio.js';
 import { cloneProp, applyLibrary } from '../core/assets.js';
 import { clamp, damp, lerp } from '../core/util.js';
 import { FH } from '../world/level.js';
+import { FPBody } from './fpBody.js';
 
 const STAND = { eye: 1.56, h: 1.74 }, CROUCH = { eye: 0.82, h: 0.95 }, SLIDE = { eye: 0.62, h: 0.75 }, PRONE = { eye: 0.3, h: 0.42 };
 const SPEED = { walk: 2.75, sprint: 5.35, crouch: 1.45 };
@@ -83,6 +84,10 @@ export class Player {
     this.bounce = new THREE.PointLight(0xfff0e0, 0, 9, 1.4);
     game.scene.add(this.bounce);
     this.ray = new THREE.Raycaster();
+    // torch spill on your own hands/body: a real torch lights the hand that holds it (short range, created at
+    // load so the light count never changes mid-game)
+    this.handGlow = new THREE.PointLight(0xffe6c8, 0, 1.1, 2);
+    game.scene.add(this.handGlow);
 
     // viewmodel
     this.vm = new THREE.Group();
@@ -95,6 +100,14 @@ export class Player {
     this.vm.traverse((o) => { if (o.isMesh) { o.castShadow = false; o.renderOrder = 5; } });
     this.vmSway = new THREE.Vector2(); this.vmKick = 0;
     game.scene.add(this.camera);
+    // first-person body (your own survivor: legs when you look down, hands that hold and use things)
+    this.fp = null;
+    try {
+      const prof = game.roster?.find((r) => r.id === game.localId)?.profile ?? 0;
+      const fp = new FPBody(this, prof | 0);
+      if (fp.ok) this.fp = fp; else game.scene.remove(fp.root);
+    } catch (e) { console.warn('first-person body unavailable', e); }
+    this.headTilt = 0;
 
     input.onLookDelta = (dx, dy) => {
       if (this.locked || !this.alive) return;
@@ -150,9 +163,10 @@ export class Player {
     for (let i = 0; i < 6; i++) if (input.hit('Digit' + (i + 1))) { this.slot = i; g.hud.hotbar(this); this.refreshHeld(); }
     if (input.wheel) { this.slot = (this.slot + (input.wheel > 0 ? 1 : 5)) % 6; g.hud.hotbar(this); this.refreshHeld(); }
     if (input.hit('KeyF') && !this.locked) this.toggleFlash();
-    if (input.hit('KeyR') && this.has('battery') && this.battery < 95) { this.take('battery'); this.battery = 100; audio.play('battery'); g.hud.notify('Fresh battery', 1.5); }
+    this.emoting = input.down('KeyJ') && !this.locked && !this.hiding && !this.cinematic;      // gag emote (hold)
+    if (input.hit('KeyR') && this.has('battery') && this.battery < 95) this.replaceBattery();
     if ((input.hit('KeyQ') || input.clicked) && !this.locked && !this.hiding) g.items.useHeld(this);
-    if (input.hit('KeyG') && this.held && !this.hiding) g.items.drop(this);
+    if (input.hit('KeyG') && this.held && !this.hiding) g.items.throwHeld(this);
 
     if (this.hiding) { this.updateHiding(dt); this.updateCamera(dt); this.updateFlash(dt); return; }
     if (this.locked) { this.updateCamera(dt); this.updateFlash(dt); return; }
@@ -285,12 +299,27 @@ export class Player {
   }
 
   toggleFlash() {
-    if (this.battery <= 0 && !this.flashOn) { audio.play('flashlight'); this.game.hud.notify('The battery is dead. [R] to replace', 2); return; }
-    this.flashOn = !this.flashOn;
-    audio.play('flashlight');
+    const click = () => {
+      if (this.battery <= 0 && !this.flashOn) { audio.play('flashlight'); this.game.hud.notify('The battery is dead. [R] to replace', 2); return; }
+      this.flashOn = !this.flashOn;
+      audio.play('flashlight');
+    };
+    if (this.fp && !this.hiding) this.fp.act('toggle', { apply: click }); else click();
+  }
+
+  /** Swap the torch battery: both hands, the cell goes in, then the light comes back. */
+  replaceBattery() {
+    if (!this.has('battery') || this.battery >= 95) return;
+    const swap = () => {
+      if (!this.has('battery')) return;
+      this.take('battery'); this.battery = 100; audio.play('battery'); this.game.hud.notify('Fresh battery', 1.5); this.refreshHeld();
+    };
+    if (this.fp && !this.hiding) { if (this.fp.act('battery', { apply: swap })) audio.play('cloth', { vol: 0.4 }); }
+    else swap();
   }
 
   refreshHeld() {
+    this.fp?.setHeld(this.held);
     this.vmHeld.clear();
     const t = this.held;
     const map = { battery: 'Battery', medkit: 'Medkit', syringe: 'Syringe', pills: 'Pills', crucifix: 'Crucifix', fuse: 'Fuse', crowbar: 'Crowbar' };
@@ -313,7 +342,7 @@ export class Player {
       const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
       c.position.addScaledVector(right, bx);
       this.lookRoll = damp(this.lookRoll, this.state === 'slide' ? 0.06 : 0, 8, dt);
-      c.rotation.set(this.pitch, this.yaw, this.lookRoll, 'YXZ');
+      c.rotation.set(this.pitch + (this.headTilt || 0), this.yaw, this.lookRoll, 'YXZ');
       const sh = this.game.shake || 0;
       if (sh > 0.01) {
         c.position.x += (Math.random() - 0.5) * 0.05 * sh; c.position.y += (Math.random() - 0.5) * 0.05 * sh;
@@ -330,6 +359,7 @@ export class Player {
     this.vmFlash.position.set(0.2 - sx * 0.4, -0.22 + Math.abs(vb) - sy * 0.3 - (this.sprinting ? 0.03 : 0), -0.34);
     this.vmFlash.rotation.set(0.04 + sy * 1.5 + (this.sprinting ? -0.25 : 0), -0.04 + sx * 1.5, 0);
     this.vmHeld.position.set(-0.24 + sx * 0.3, -0.26 + vb, -0.42);
+    if (this.fp) { this.vm.visible = false; c.updateMatrixWorld(); this.fp.update(dt); }
   }
 
   updateFlash(dt) {
@@ -345,9 +375,15 @@ export class Player {
     this.flashDir.lerp(fwd, 1 - Math.exp(-28 * dt)).normalize();
     const origin = this.hiding
       ? cam.position.clone()
-      : new THREE.Vector3(0.2, -0.2, -0.35).applyMatrix4(cam.matrixWorld);
+      : this.fp && this.fp.root.visible && !this.fp.torchHidden ? this.fp.tipWorld(new THREE.Vector3())
+        : new THREE.Vector3(0.2, -0.2, -0.35).applyMatrix4(cam.matrixWorld);
     this.flash.position.copy(origin);
     this.flashTarget.position.copy(origin).add(this.flashDir);
+    if (this.fp) {
+      // just above and in front of the hands, toward the beam
+      this.handGlow.position.copy(origin).addScaledVector(this.flashDir, 0.12).add(new THREE.Vector3(0, 0.06, 0));
+      this.handGlow.intensity = on && this.fp.root.visible ? 0.55 * (0.6 + 0.4 * Math.min(1, this.battery / 30)) : 0;
+    }
     // cutscenes: a dim, trembling torch so close-ups aren't blown out
     const mul = this.cinematic && !this.hiding ? 0.32 * (0.8 + Math.random() * 0.4) : 1;
     // eye adaptation: a wall right in front of the lens must not turn into a white disc

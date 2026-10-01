@@ -154,6 +154,7 @@ export class Items {
   worldPos(it) { const p = new THREE.Vector3(); it.obj.getWorldPosition(p); return p; }
 
   update(dt, camPos) {
+    this.updateFlying(dt);
     this.t += dt;
     this.outlineMat.opacity = 0.35 + 0.25 * Math.sin(this.t * 4);
     for (const it of this.world.values()) {
@@ -174,29 +175,44 @@ export class Items {
   useHeld(p) {
     const g = this.game, t = p.held;
     if (!t) return;
+    if (p.fp?.busy) return;
+    let apply = null, anim = t;
     switch (t) {
       case 'medkit':
         if (p.health >= 100) { g.hud.notify('You are not hurt', 1.5); return; }
-        p.take('medkit'); p.health = Math.min(100, p.health + 60); audio.play('heal'); g.hud.notify('Wounds dressed', 1.5); break;
+        apply = () => { if (!p.take('medkit')) return; p.health = Math.min(100, p.health + 60); audio.play('heal'); g.hud.notify('Wounds dressed', 1.5); };
+        audio.play('cloth', { vol: 0.5 });
+        break;
       case 'syringe':
-        p.take('syringe'); p.adrenaline = 12; p.stamina = 100; p.health = Math.min(100, p.health + 15); audio.play('inject'); g.hud.notify('Adrenaline surges', 2); break;
+        apply = () => { if (!p.take('syringe')) return; p.adrenaline = 12; p.stamina = 100; p.health = Math.min(100, p.health + 15); audio.play('inject'); g.hud.notify('Adrenaline surges', 2); };
+        break;
       case 'pills':
-        p.take('pills'); p.sanity = Math.min(100, p.sanity + 60); audio.play('pickup'); g.hud.notify('Your hands stop shaking', 2); break;
+        apply = () => { if (!p.take('pills')) return; p.sanity = Math.min(100, p.sanity + 60); audio.play('pickup'); g.hud.notify('Your hands stop shaking', 2); };
+        break;
       case 'battery':
         if (p.battery > 95) { g.hud.notify('Battery is already full', 1.5); return; }
-        p.take('battery'); p.battery = 100; audio.play('battery'); break;
+        p.replaceBattery();
+        return;
       case 'crucifix': {
         const ghost = g.ghostInFront(p, 6.5);
-        if (!ghost) { g.hud.notify('The crucifix trembles… nothing here to ward off', 2); return; }
-        p.take('crucifix');
-        audio.play('crucifix', { pos: ghost.pos });
-        g.request({ k: 'crucifix', ghost: ghost.id });
+        if (!ghost) {
+          g.hud.notify('The crucifix trembles… nothing here to ward off', 2);
+          if (p.fp) p.fp.act('crucifix', {}, { keep: true });
+          return;
+        }
+        apply = () => {
+          if (!p.take('crucifix')) return;
+          audio.play('crucifix', { pos: ghost.pos });
+          g.request({ k: 'crucifix', ghost: ghost.id });
+        };
         break;
       }
       default:
         g.hud.notify(`Use the ${ITEM_DEFS[t].name.toLowerCase()} on something`, 1.8);
+        return;
     }
-    p.refreshHeld();
+    const done = () => { apply(); p.refreshHeld(); };
+    if (p.fp) p.fp.act(anim, { apply: done }); else done();
   }
 
   drop(p) {
@@ -209,6 +225,69 @@ export class Items {
     this.game.request({ k: 'drop', type: t, pos: [pos.x, pos.y, pos.z] });
     audio.play('pickup', { vol: 0.5 });
     p.emit(4, 'drop');
+  }
+
+  /** [G]: wind up and throw the held item. It flies on a real arc, clatters where it lands (ghosts hear it -
+   *  a way to pull them elsewhere) and lies there to be picked up again. */
+  throwHeld(p) {
+    const t = p.held;
+    if (!t) return;
+    if (!p.fp) { this.drop(p); return; }
+    if (p.fp.busy) return;
+    p.fp.act('throw', {
+      release: () => {
+        if (p.held !== t || !p.take(t)) return;
+        const from = p.fp.leftHandWorld(new THREE.Vector3());
+        p.refreshHeld();
+        const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(p.camera.quaternion);
+        const vel = dir.multiplyScalar(7.5).add(new THREE.Vector3(0, 2.2, 0)).add(p.vel.clone().multiplyScalar(0.5));
+        this.launch(t, from, vel, p);
+        audio.play('whoosh', { vol: 0.4 });
+      },
+    });
+  }
+
+  launch(type, from, vel, p) {
+    const def = ITEM_DEFS[type];
+    const obj = cloneProp('items', def.prop); applyLibrary(obj, { cast: false });
+    obj.position.copy(from);
+    this.group.add(obj);
+    const L = this.game.level;
+    const spin = new THREE.Vector3(Math.random() * 8 - 4, Math.random() * 8 - 4, Math.random() * 8 - 4);
+    this.flying = this.flying || [];
+    this.flying.push({ type, obj, vel, spin, layer: p.layer, t: 0, bounces: 0, L });
+  }
+
+  /** Thrown items in flight (called every frame). */
+  updateFlying(dt) {
+    if (!this.flying?.length) return;
+    const g = this.game, L = g.level;
+    for (let i = this.flying.length - 1; i >= 0; i--) {
+      const f = this.flying[i];
+      f.t += dt;
+      const prev = f.obj.position.clone();
+      f.vel.y -= 9.8 * dt;
+      const next = prev.clone().addScaledVector(f.vel, dt);
+      // walls: bounce back off with most of the speed gone
+      if (!L.los(prev, next)) {
+        f.vel.x *= -0.3; f.vel.z *= -0.3; f.vel.y *= 0.5;
+        next.copy(prev);
+        if (f.bounces++ === 0) { audio.play('object_fall', { pos: prev, vol: 0.6 }); g.player.noise.push({ x: prev.x, y: prev.y, z: prev.z, r: 9, kind: 'throw' }); }
+      }
+      const lay = L.layerOfY(prev.y - 0.2);
+      const floor = L.heightAt(next.x, next.z, lay);
+      f.obj.position.copy(next);
+      f.obj.rotation.x += f.spin.x * dt; f.obj.rotation.y += f.spin.y * dt; f.obj.rotation.z += f.spin.z * dt;
+      if (next.y <= floor + 0.03 || f.t > 4) {
+        const pos = new THREE.Vector3(next.x, floor + 0.03, next.z);
+        if (!L.roomAt(pos.x, pos.z, lay)) pos.copy(prev).setY(floor + 0.03);
+        this.group.remove(f.obj);
+        this.flying.splice(i, 1);
+        audio.play('object_fall', { pos, vol: 0.9 });
+        g.player.noise.push({ x: pos.x, y: pos.y, z: pos.z, r: 11, kind: 'throw' });
+        g.request({ k: 'drop', type: f.type, pos: [pos.x, pos.y, pos.z] });
+      }
+    }
   }
 }
 
@@ -279,7 +358,20 @@ export class Interact {
     this.cur = c;
     g.hud.prompt(c ? c.label : null, c && !/Locked|locked|Boarded|hums|burnt|Main gate —|no power/.test(c.label));
     if (!c || !input.hit('KeyE')) return;
-    this.activate(c, p);
+    // the left hand reaches out to it; the action lands when the hand gets there
+    const reach = p.fp && !p.fp.busy && ['item', 'door', 'drawer', 'fusebox', 'case', 'piano', 'musicbox'].includes(c.kind) && !(c.kind === 'item' && c.ref.type === 'note');
+    if (reach) {
+      const target = this.targetPos(c);
+      p.fp.act('reach', { apply: () => this.activate(c, p) }, { target, grab: c.kind === 'item' });
+    } else if (!p.fp?.busy) this.activate(c, p);
+  }
+
+  targetPos(c) {
+    const g = this.game, r = c.ref;
+    if (c.kind === 'item') return g.items.worldPos(r).clone();
+    if (c.kind === 'door') return (r.handle || r.center).clone ? (r.handle || r.center).clone() : null;
+    const p = r.pos || r.center || (r.obj && r.obj.getWorldPosition(new THREE.Vector3()));
+    return p && p.clone ? p.clone() : null;
   }
 
   activate(c, p) {

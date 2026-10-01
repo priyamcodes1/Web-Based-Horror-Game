@@ -898,7 +898,7 @@ export class Game {
     const p = this.player;
     return { x: +p.pos.x.toFixed(2), y: +p.pos.y.toFixed(2), z: +p.pos.z.toFixed(2), yaw: +p.yaw.toFixed(3), pitch: +p.pitch.toFixed(2), st: p.state,
       sp: +Math.hypot(p.vel.x, p.vel.z).toFixed(2), fl: p.flashOn && p.battery > 0 ? 1 : 0, hd: p.hiding ? p.hiding.gid : -1, al: p.alive ? 1 : 0,
-      h: Math.round(p.health), hb: p.holdingBreath ? 1 : 0, tk: this.voice?.talking ? 1 : 0, pk: p.peekExposed && p.hiding ? 1 : 0 };
+      h: Math.round(p.health), hb: p.holdingBreath ? 1 : 0, tk: this.voice?.talking ? 1 : 0, pk: p.peekExposed && p.hiding ? 1 : 0, em: p.emoting ? 1 : 0 };
   }
 
   netSend() {

@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { cloneProp, applyLibrary } from '../core/assets.js';
 import { makeSurvivor, castById } from './cast.js';
 import { dampAngle, angleDiff, clamp } from '../core/util.js';
+import { twoBoneIK, emoteTarget } from '../gfx/armIK.js';
 
 const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _v = new THREE.Vector3(), _e = new THREE.Euler();
 const UP = new THREE.Vector3(0, 1, 0);
@@ -69,7 +70,7 @@ export class Avatar {
 
   setState(s) {
     this.target.pos.set(s.x, s.y, s.z); this.target.yaw = s.yaw; this.pitch = s.pitch ?? 0;
-    this.flashOn = !!s.fl; this.stance = s.st; this.speed = s.sp ?? 0; this.alive = s.al !== 0;
+    this.flashOn = !!s.fl; this.stance = s.st; this.emote = !!s.em; this.speed = s.sp ?? 0; this.alive = s.al !== 0;
     const spot = s.hd >= 0 ? this.game.hideList?.[s.hd] : null;
     if (spot !== this.hideSpot) this.startHide(spot);
   }
@@ -161,6 +162,7 @@ export class Avatar {
     this.root.rotation.y = this.bodyYaw + Math.PI;     // model faces +Z; yaw 0 looks toward -Z
     this.char.update(dt);
     if (!scripted) this.aimLayer();
+    this.updateEmote(dt, scripted);
     this.updateTorch();
     // name tag
     this.tag.position.set(this.pos.x, this.pos.y + this.char.height + 0.25, this.pos.z);
@@ -191,8 +193,25 @@ export class Avatar {
     this.root.updateMatrixWorld(true);
   }
 
+  /** [J] gag emote seen by everyone else: right hand at the front of the hips, pumping. */
+  updateEmote(dt, scripted) {
+    this.emoteW = (this.emoteW || 0) + (((this.emote && !scripted) ? 1 : 0) - (this.emoteW || 0)) * Math.min(1, dt * 6);
+    if (this.emoteW < 0.01) return;
+    const B = this.char.bones;
+    if (!B.upperarm_r || !B.pelvis) return;
+    this.emotePhase = (this.emotePhase || 0) + dt * Math.PI * 2 * 2.4;
+    this.root.updateMatrixWorld(true);
+    const T = emoteTarget(B.pelvis, this.bodyYaw, this.emotePhase);
+    const C = B.hand_r.getWorldPosition(new THREE.Vector3());
+    T.lerpVectors(C, T, this.emoteW);
+    const right = new THREE.Vector3(Math.cos(this.bodyYaw), 0, -Math.sin(this.bodyYaw));
+    const pole = B.upperarm_r.getWorldPosition(new THREE.Vector3()).addScaledVector(right, 0.35).add(new THREE.Vector3(0, -0.25, 0));
+    twoBoneIK(B.upperarm_r, B.lowerarm_r, B.hand_r, T, pole);
+    this.root.updateMatrixWorld(true);
+  }
+
   updateTorch() {
-    const on = this.root.visible && !this.hideSpot;
+    const on = this.root.visible && !this.hideSpot && !((this.emoteW || 0) > 0.5);
     this.torch.visible = on;
     if (!on || !this.hand) return;
     this.hand.updateMatrixWorld();
