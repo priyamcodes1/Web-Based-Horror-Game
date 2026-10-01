@@ -44,7 +44,9 @@ const clonePose = (p) => ({ W: p.W.clone(), q: p.q.clone(), c: p.c, th: p.th });
 
 // ------------------------------------------------------------------ base poses (camera space: x right, y up, -z ahead)
 // right hand: torch in a hammer grip, index side forward, knuckles up and a little in
-const R_TORCH = palmPose('r', [0.16, -0.25, -0.26], [-1, 0.25, 0], [0.05, 0.75, -0.65], 0.92, 0.8);
+// power grip: the torch lies diagonally (35 deg) across the base of the fingers, which wrap round it; the hand is
+// tilted so that diagonal points the lens ahead and a little toward the middle - palm faces in, knuckles forward-down
+const R_TORCH = pose([0.17, -0.21, -0.27], [-0.154, 0.57, -0.807], [-0.186, -0.819, -0.54], 0.92, 0.8);   // lens level, toed in 15 deg
 // left hand: upright fist (item standing up out of the index side), palm turned in
 const L_FIST = palmPose('l', [-0.15, -0.27, -0.31], [1, 0, 0.3], [0.4, 0.05, -1], 0.85, 0.7);
 // left hand: flat palm up, carrying something on it
@@ -53,22 +55,23 @@ const L_PALM = palmPose('l', [-0.13, -0.3, -0.33], [0.1, 1, 0.1], [0.15, 0.1, -1
 /** How each item sits in the hand. pos = (along A, along F, out of the palm N) from the wrist; axes map item-local
  *  axes onto grip axes; grip = which left-hand pose carries it. */
 const ITEMS = {
-  torch: { prop: 'Flashlight', pos: [0.0, 0.075, 0.03], axes: { z: [-0.75, 0.66, 0], y: 'N' }, anchor: [0, 0, 0.075] },
-  battery: { prop: 'Battery', grip: 'fist', pos: [0, 0.075, 0.026], axes: { y: 'A', z: 'F' }, anchor: [0, 0.03, 0], scale: 1.3 },
-  pills: { prop: 'Pills', grip: 'fist', pos: [0, 0.075, 0.03], axes: { y: 'A', z: 'F' }, anchor: [0, 0.04, 0] },
-  fuse: { prop: 'Fuse', grip: 'fist', pos: [0, 0.075, 0.022], axes: { z: 'A', y: 'F' }, anchor: [0, 0, 0] },
-  syringe: { prop: 'Syringe', grip: 'fist', pos: [0, 0.075, 0.022], axes: { z: '-A', y: 'F' }, anchor: [0, 0, -0.03], scale: 1.2 },
-  crucifix: { prop: 'Crucifix', grip: 'fist', pos: [0, 0.075, 0.022], axes: { y: 'A', z: 'F' }, anchor: [0, 0.03, 0] },
-  crowbar: { prop: 'Crowbar', grip: 'fist', pos: [0, 0.075, 0.024], axes: { z: 'A', y: 'F' }, anchor: [0, 0, -0.26] },
-  medkit: { prop: 'Medkit', grip: 'palm', pos: [0.01, 0.11, 0.012], axes: { y: 'N', z: 'F' }, anchor: [0, 0, 0], scale: 0.85 },
-  key_brass: { prop: 'Key_Brass', grip: 'fist', pos: [0, 0.075, 0.02], axes: { z: 'A', x: 'F' }, anchor: [0, 0, -0.02], scale: 1.3 },
-  key_silver: { prop: 'Key_Silver', grip: 'fist', pos: [0, 0.075, 0.02], axes: { z: 'A', x: 'F' }, anchor: [0, 0, -0.02], scale: 1.3 },
-  key_iron: { prop: 'Key_Iron', grip: 'fist', pos: [0, 0.075, 0.02], axes: { z: 'A', x: 'F' }, anchor: [0, 0, -0.02], scale: 1.3 },
+  // pos: (along A, along F, out of the palm) from the wrist; cyl: contact cylinder (local axis through the origin, radius)
+  torch: { prop: 'Flashlight', pos: [0.0, 0.085, 0.046], axes: { z: [0.82, 0.57, 0], y: 'N' }, anchor: [0, 0, 0.075], cyl: { axis: 'z', r: 0.03 } },
+  battery: { prop: 'Battery', grip: 'fist', pos: [0, 0.085, 0.036], axes: { y: 'A', z: 'F' }, anchor: [0, 0.03, 0], scale: 1.3, cyl: { axis: 'y', r: 0.017 } },
+  pills: { prop: 'Pills', grip: 'fist', pos: [0, 0.085, 0.034], axes: { y: 'A', z: 'F' }, anchor: [0, 0.045, 0], cyl: { axis: 'y', r: 0.02 } },
+  fuse: { prop: 'Fuse', grip: 'fist', pos: [0, 0.085, 0.026], axes: { z: 'A', y: 'F' }, anchor: [0, 0, 0], cyl: { axis: 'z', r: 0.0125 } },
+  syringe: { prop: 'Syringe', grip: 'fist', pos: [0, 0.085, 0.024], axes: { z: '-A', y: 'F' }, anchor: [0, 0, -0.03], scale: 1.2, cyl: { axis: 'z', r: 0.0095 } },
+  crucifix: { prop: 'Crucifix', grip: 'fist', pos: [0, 0.085, 0.026], axes: { y: 'A', z: 'F' }, anchor: [0, 0.03, 0], cyl: { axis: 'y', r: 0.011 } },
+  crowbar: { prop: 'Crowbar', grip: 'fist', pos: [0, 0.085, 0.027], axes: { z: 'A', y: 'F' }, anchor: [0, 0, -0.26], cyl: { axis: 'z', r: 0.013 } },
+  medkit: { prop: 'Medkit', grip: 'palm', pos: [0.0, 0.07, 0.014], axes: { y: 'N', z: 'F' }, anchor: [0, 0, 0], scale: 0.7 },
+  key_brass: { prop: 'Key_Brass', grip: 'fist', pos: [0, 0.085, 0.02], axes: { z: 'A', x: 'F' }, anchor: [0, 0, -0.02], scale: 1.3, cyl: { axis: 'z', r: 0.007 } },
+  key_silver: { prop: 'Key_Silver', grip: 'fist', pos: [0, 0.085, 0.02], axes: { z: 'A', x: 'F' }, anchor: [0, 0, -0.02], scale: 1.3, cyl: { axis: 'z', r: 0.007 } },
+  key_iron: { prop: 'Key_Iron', grip: 'fist', pos: [0, 0.085, 0.02], axes: { z: 'A', x: 'F' }, anchor: [0, 0, -0.02], scale: 1.3, cyl: { axis: 'z', r: 0.007 } },
 };
 
 const FINGERS = ['index', 'middle', 'ring', 'pinky'];
-const SEG = [['01', 0.55], ['02', 0.75], ['03', 0.5]];         // fist: radians per joint at curl 1
-const THUMB = [['01', 0.25], ['02', 0.45], ['03', 0.45]];
+const SEG = [['01', 1.45], ['02', 1.65], ['03', 1.1]];          // a real fist: ~83 / 95 / 63 degrees per joint at curl 1
+const THUMB = [['01', 0.5], ['02', 0.75], ['03', 0.75]];
 
 export class FPBody {
   constructor(player, profileId) {
@@ -309,9 +312,19 @@ if (vChest > 0.45) discard;`);
     this.bones.head.scale.setScalar(0.001);                       // never see the inside of your own head
     this.root.updateMatrixWorld(true);
 
-    // ---- items follow the hands
+    // ---- items follow the hands, fingers close onto them
     this.placeItem(this.torch, 'r');
-    if (this.left) { this.placeItem(this.left, 'l'); this.left.obj.visible = this.leftVisible && this.w.l > 0.3; }
+    if (!this.torchHidden) this.wrap('r', this.torch, this.w.r);
+    if (this.left) {
+      this.placeItem(this.left, 'l'); this.left.obj.visible = this.leftVisible && this.w.l > 0.3;
+      if (this.left.obj.visible && this.left.def.cyl) this.wrap('l', this.left, this.w.l);
+    }
+    // the torch thumb-click rides on top of the wrap
+    if (this.action?.name === 'toggle') {
+      const t = this.action.t, k = t < 0.11 ? ease(t / 0.11) : 1 - ease((t - 0.14) / 0.18);
+      for (const f of this.hands.r.curl) if (f.thumb && !/_01_/.test(f.b.name)) f.b.quaternion.multiply(_q.setFromAxisAngle(f.axis, 0.35 * k));
+    }
+    this.root.updateMatrixWorld(true);
   }
 
   /** Two-bone IK: wrist onto the pose (camera space), elbow down and out, hand turned to the pose's grip frame. */
@@ -362,6 +375,44 @@ if (vChest > 0.45) discard;`);
     }
   }
 
+  /** Close each finger (and the thumb) until it meets the held item's surface, never through it. */
+  wrap(s, item, w) {
+    const cyl = item.def.cyl;
+    if (!cyl || w < 0.3) return;
+    const H = this.hands[s];
+    item.obj.updateMatrixWorld(true);
+    const o = item.obj.getWorldPosition(new THREE.Vector3());
+    const d = (cyl.axis === 'y' ? V3(0, 1, 0) : V3(0, 0, 1)).applyQuaternion(item.obj.quaternion).normalize();
+    const R = cyl.r * (item.def.scale || 1) + 0.009 * this.scale;          // surface + finger pad thickness
+    const dist = (pt) => { const v = pt.sub(o); return v.addScaledVector(d, -v.dot(d)).length(); };
+    const groups = {};
+    for (const f of H.curl) { const key = f.b.name.replace(/_0\d_[lr]$/, ''); (groups[key] = groups[key] || []).push(f); }
+    const pt = new THREE.Vector3(), tip = new THREE.Vector3();
+    for (const chain of Object.values(groups)) {
+      const set = (k) => { for (const f of chain) f.b.quaternion.copy(H.rest[f.b.name]).multiply(_q.setFromAxisAngle(f.axis, f.amt * k)); chain[0].b.updateMatrixWorld(true); };
+      const inside = () => {
+        for (let i = 1; i < chain.length; i++) if (dist(chain[i].b.getWorldPosition(pt)) < R) return true;
+        const last = chain[chain.length - 1].b, prev = chain[chain.length - 2].b;
+        last.getWorldPosition(tip); prev.getWorldPosition(pt);
+        tip.add(tip.clone().sub(pt).multiplyScalar(0.75));                // fingertip ~ 3/4 of the middle phalanx past the last joint
+        return dist(tip) < R;
+      };
+      // sweep from open toward closed (the thumb may first swing out past its rest pose to clear the item), keep
+      // the most closed pose before first contact, refine between the last free step and the first touching one
+      const thumb = chain[0].thumb;
+      const k0 = thumb ? -1 : 0, steps = thumb ? 20 : 12;
+      let lo = null, hi = 1;
+      for (let i = 0; i <= steps; i++) {
+        const k = k0 + (1 - k0) * i / steps;
+        set(k);
+        if (inside()) { if (lo !== null) { hi = k; break; } } else lo = k;
+      }
+      if (lo === null) lo = k0;
+      for (let i = 0; i < 5 && hi > lo + 1e-3; i++) { const m = (lo + hi) / 2; set(m); if (inside()) hi = m; else lo = m; }
+      set(lo);
+    }
+  }
+
   twistAbout(q, axis) {
     // swing-twist decomposition: angle of q's rotation about `axis`
     const r = V3(q.x, q.y, q.z);
@@ -406,12 +457,41 @@ if (vChest > 0.45) discard;`);
     item.obj.quaternion.copy(q);
     const sc = (def.scale || 1);
     const anchor = V3(...def.anchor).multiplyScalar(sc).applyQuaternion(q);
-    const [pa, pf, pn] = def.pos;
+    let [pa, pf, pn] = def.pos;
+    if (def.cyl) {
+      // cylinders sit across the base of the fingers, one radius plus the palm's thickness out from the knuckles
+      const mcp = this.bones['middle_01_' + s].getWorldPosition(new THREE.Vector3()).distanceTo(wrist) / this.scale;
+      pf = mcp * 0.92;
+      pn = def.cyl.r * sc + 0.022;
+    }
     item.obj.position.copy(wrist).addScaledVector(fr.A, pa * this.scale).addScaledVector(fr.F, pf * this.scale).addScaledVector(N, pn * this.scale).sub(anchor);
     item.obj.updateMatrixWorld(true);
   }
 
   get torchHidden() { return this.emoteW > 0.5; }
+
+  /** Left-hand pose (camera space) that holds the battery on the torch's axis just below its tail;
+   *  push 0 = 6 cm short, 1 = seated. Uses last frame's torch transform. */
+  batteryPose(push) {
+    if (!this.left || this.leftType !== 'battery') return null;
+    const cam = this.p.camera, tq = this.torch.obj.quaternion;
+    const lens = V3(0, 0, 1).applyQuaternion(tq).normalize();
+    const tail = this.torch.obj.localToWorld(V3(0, 0, -0.02));
+    const def = this.left.def, sc = def.scale || 1;
+    const center = tail.addScaledVector(lens, -(0.035 * sc + 0.06 * (1 - push)));
+    // fingers come across from the left, the cell's axis (the grip's A) along the torch
+    const camRight = V3(1, 0, 0).applyQuaternion(cam.quaternion);
+    const F = camRight.addScaledVector(lens, -camRight.dot(lens)).normalize();
+    const A = lens.clone();
+    const N = F.clone().cross(A);                                   // left palm = F x A
+    const H = this.hands.l;
+    const mcp = this.bones.middle_01_l.getWorldPosition(V3(0, 0, 0)).distanceTo(this.bones.hand_l.getWorldPosition(V3(0, 0, 0)));
+    const wrist = center.addScaledVector(F, -mcp * 0.92).addScaledVector(N, -(def.cyl.r * sc + 0.022) * this.scale);
+    const invQ = cam.quaternion.clone().invert();
+    const W = wrist.applyMatrix4(_m.copy(cam.matrixWorld).invert());
+    void H;
+    return pose(W.toArray(), A.applyQuaternion(invQ).toArray(), F.applyQuaternion(invQ).toArray(), 0.85, 0.75);
+  }
 
   /** World position of the torch lens (the beam starts there). */
   tipWorld(out = new THREE.Vector3()) { return this.torchTip.getWorldPosition(out); }
@@ -433,20 +513,19 @@ const ACTIONS = {
       cur.r.W.y -= 0.008 * k; cur.r.W.z += 0.006 * k;
     },
   },
-  // two hands: torch to the middle with the lens tipped up and away, the new cell pushed up into the tail from
-  // below, then the torch swings back level
+  // two hands: torch to the middle with the lens tipped up and away; the left hand lines the new cell up under the
+  // torch's tail (tracked live, so it always meets it) and pushes it home, then the torch swings back level
   battery: {
     dur: 1.7, events: [[1.1, 'apply']],
-    run(t, cur) {
-      // lens up and away, tail cap low toward you; the cell goes up into it from below
-      const R = palmPose('r', [0.04, -0.24, -0.4], [-1, 0.175, 0.18], [0.05, 0.99, 0.085], 0.92, 0.8);
-      const L1 = palmPose('l', [-0.039, -0.342, -0.227], [1, -0.216, 0.21], [0.4, 0.755, -0.664], 0.85, 0.75);
-      const L2 = palmPose('l', [-0.039, -0.299, -0.269], [1, -0.216, 0.21], [0.4, 0.755, -0.664], 0.85, 0.75);
+    run(t, cur, body) {
+      const R = pose([0.05, -0.1, -0.44], [0, 0.983, -0.177], [0, -0.177, -0.983], 0.92, 0.8);
       const kr = t < 0.4 ? seg(t, 0, 0.4) : t < 1.25 ? 1 : 1 - seg(t, 1.25, 1.65);
       key(cur, 'r', R, kr);
-      if (t < 0.6) key(cur, 'l', L1, seg(t, 0.1, 0.6));
-      else if (t < 1.1) lerpPose(L1, L2, seg(t, 0.7, 1.05), cur.l);
-      else key(cur, 'l', L2, 1 - seg(t, 1.15, 1.5));
+      const L = body.batteryPose(t < 0.7 ? 0 : seg(t, 0.7, 1.05));
+      if (L) {
+        const kl = t < 0.7 ? seg(t, 0.1, 0.65) : t < 1.1 ? 1 : 1 - seg(t, 1.15, 1.5);
+        key(cur, 'l', L, kl);
+      }
       return { lw: t < 1.45 ? 1 : 1 - seg(t, 1.45, 1.65), leftVisible: t < 1.1 };
     },
   },
