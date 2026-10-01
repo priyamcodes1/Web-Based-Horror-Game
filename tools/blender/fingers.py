@@ -3,7 +3,7 @@
 # twisting sideways or bending backwards (the "claw" look of a fixed-axis curl).
 from mathutils import Quaternion as Q
 
-SEG = (('01', 0.30), ('02', 0.42), ('03', 0.28))
+SEG = (('01', 0.24), ('02', 0.26), ('03', 0.14))     # relaxed hand: ~37 deg total on the middle finger at amount 1
 
 
 def curl_dict(rig, amount=1.0, thumb=0.35, spread=0.0):

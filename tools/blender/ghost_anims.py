@@ -61,7 +61,7 @@ info = {}
 for name, clip, kw in SETS[T] + COMMON:
     kw = dict(kw); fin = kw.pop('finger', LIMP)
     try:
-        act, inf = mocap.retarget(rig, clip, name=name, fps=30, face_motion=True, finger_curl=fin, arm_out=4.0, smooth=3, hand_follow=0.55, **kw)
+        act, inf = mocap.retarget(rig, clip, name=name, fps=30, face_motion=True, finger_curl=fin, arm_out=4.0, smooth=3, hand_follow=0.55, hand_rel=True, **kw)
         info[name] = (inf['frames'], inf['loop'])
     except Exception as e:
         print('CLIP FAIL', name, e)
@@ -80,6 +80,6 @@ bpy.ops.export_scene.gltf(
     export_animations=True, export_animation_mode='NLA_TRACKS', export_force_sampling=True,
     export_optimize_animation_size=True, export_extras=True, export_morph=True, export_morph_normal=False,
     export_image_format='WEBP', export_image_quality=86, export_tangents=False,
-    export_meshopt_compression_enable=True, export_skins=True, export_all_influences=False,
+    export_meshopt_compression_enable=False, export_skins=True, export_all_influences=False,   # meshopt quantizes rotation keys -> choppy motion
     export_def_bones=True, export_leaf_bone=False)
 print('RESULT', json.dumps({'out': out, 'mb': round(os.path.getsize(out) / 1e6, 2), 'clips': info}, default=str))

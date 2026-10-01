@@ -41,6 +41,7 @@ const DEFAULTS = {
   voiceMode: 'ptt',   // 'ptt' | 'open'
   playerName: '',
   profile: -1, // -1 = random
+  setup: null, // last Play-screen choices: { mode, map, ghostCount, ghostTypes, lives, difficulty }
 };
 
 export const settings = { ...DEFAULTS };
@@ -53,6 +54,11 @@ export function loadSettings() {
   if (!QUALITY[settings.quality]) settings.quality = 'high';
   return settings;
 }
+
+// another tab changed them: adopt the new values so this tab never writes stale ones back
+try {
+  addEventListener('storage', (e) => { if (e.key === KEY && e.newValue) { try { Object.assign(settings, JSON.parse(e.newValue)); } catch (_) { /* ignore */ } } });
+} catch (_) { /* no window */ }
 
 export function saveSettings() {
   try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch (_) { /* ignore */ }

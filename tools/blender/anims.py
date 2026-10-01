@@ -21,15 +21,15 @@ sole = min((o.matrix_world @ v.co).z for o in bpy.data.objects if o.type == 'MES
 mocap.GROUND_CLEAR = feet_z - sole
 
 # women's library: hands hang a little wider so they rest on a flared skirt instead of sinking into it
-ARM_OUT = 14.0 if OUTN == 'anim_f' else 9.0
+ARM_OUT = 11.0 if OUTN == 'anim_f' else 8.0
 # natural finger poses (rest-pose derived curl axes): relaxed for most clips, a firm grip when hanging
-RELAX, GRIP = fingers.curl_dict(rig, 1.0), fingers.curl_dict(rig, 2.3, thumb=0.8)
+RELAX, GRIP = fingers.curl_dict(rig, 0.8), fingers.curl_dict(rig, 3.2, thumb=0.8)
 
 CLIPS = [  # name, clip, kwargs
-    ('Idle', '139_02', dict(loop=(90, 240), upright=1.0)),
+    ('Idle', '139_02', dict(loop=(90, 240), upright=1.0, calm={'head': 0.3, 'neck_01': 0.3, 'spine_03': 0.6, 'upperarm': 0.35, 'lowerarm': 0.35, 'hand': 0.3, 'clavicle': 0.4}, arm_hang=1.0, smooth_extra={'head': 10, 'neck': 10, 'upperarm': 6, 'lowerarm': 6, 'hand': 8})),
     ('IdleScared', '79_73', dict(loop=(90, 200))),
-    ('LookAround', '77_05', dict(loop=(60, 120), upright=0.85)),
-    ('Walk', '143_32', dict(loop=(28, 44), in_place=True, min_speed=0.6, upright=0.8)),
+    ('LookAround', '77_05', dict(loop=(60, 120), upright=0.85, calm={'upperarm': 0.5, 'lowerarm': 0.5, 'hand': 0.4}, arm_hang=0.8, smooth_extra={'head': 6, 'neck': 6, 'hand': 6})),
+    ('Walk', '143_32', dict(loop=(28, 44), in_place=True, min_speed=0.6, upright=0.8, arm_hang=0.7, calm={'head': 0.6, 'neck_01': 0.6, 'hand': 0.5})),
     ('WalkScared', '105_32', dict(loop=(28, 60), in_place=True, min_speed=0.3)),
     ('Sneak', '77_14', dict(loop=(28, 60), in_place=True, min_speed=0.5)),
     ('Run', '16_35', dict(loop=(12, 24), in_place=True, min_speed=1.5, upright=0.4)),
@@ -58,8 +58,9 @@ info = {}
 for name, clip, kw in CLIPS:
     kw = dict(kw)
     fin = kw.pop('finger', RELAX)
+    kw.setdefault('smooth_extra', {'head': 5, 'neck': 5, 'hand': 4})       # capture noise lives in the extremities
     try:
-        act, inf = mocap.retarget(rig, clip, name=name, fps=30, face_motion=True, finger_curl=fin, smooth=3, hand_follow=0.65, arm_out=ARM_OUT, **kw)
+        act, inf = mocap.retarget(rig, clip, name=name, fps=30, face_motion=True, finger_curl=fin, smooth=3, hand_follow=0.65, arm_out=ARM_OUT, hand_rel=True, **kw)
         info[name] = inf
     except Exception as e:
         print('CLIP FAIL', name, e)
@@ -80,6 +81,6 @@ bpy.ops.export_scene.gltf(
     filepath=out, export_format='GLB', use_selection=True, export_yup=True, export_apply=False,
     export_animations=True, export_animation_mode='NLA_TRACKS', export_force_sampling=True,
     export_optimize_animation_size=True, export_extras=True, export_skins=True, export_def_bones=True,
-    export_leaf_bone=False, export_meshopt_compression_enable=True)
+    export_leaf_bone=False, export_meshopt_compression_enable=False)   # meshopt quantizes rotation keys -> stair-stepped, shaky motion
 print('RESULT', json.dumps({'out': out, 'mb': round(os.path.getsize(out) / 1e6, 2), 'hip': hip,
                             'clips': {k: (v.get('frames'), v.get('loop')) for k, v in info.items()}}, default=str))

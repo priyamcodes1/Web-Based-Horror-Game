@@ -119,6 +119,7 @@ export class Ghost {
     this.timer = 0; this.cool = 0; this.voiceT = 3 + rng.next() * 6; this.stepT = 0; this.repathT = 0;
     this.dissolve = 0; this.dissolveTarget = 0;
     this.seenHide = null;
+    this.sinceSeen = new Map();   // player id -> seconds since this ghost last saw them out in the open
     this.stun = 0; this.lure = null; this.hunt = 0;
     this.stuckT = 0; this.lastPos = new THREE.Vector3();
     this.special = 0;
@@ -225,7 +226,16 @@ export class Ghost {
   get layer() { return this.game.level.layerOfY(this.pos.y + 0.3); }
 
   goTo(p, ghost = true) {
-    const path = this.game.level.findPath({ x: this.pos.x, z: this.pos.z, l: this.layer }, { x: p.x, z: p.z, l: p.l ?? this.game.level.layerOfY(p.y ?? 0) }, ghost);
+    const L = this.game.level, from = { x: this.pos.x, z: this.pos.z, l: this.layer };
+    const l = p.l ?? L.layerOfY(p.y ?? 0);
+    let path = L.findPath(from, { x: p.x, z: p.z, l }, ghost);
+    // the exact point can sit on furniture (a music box on a table): settle for the nearest reachable spot beside it
+    for (let r = 0.7; !path && r <= 2.1; r += 0.7) {
+      for (let k = 0; k < 8 && !path; k++) {
+        const a = k * Math.PI / 4;
+        path = L.findPath(from, { x: p.x + Math.cos(a) * r, z: p.z + Math.sin(a) * r, l }, ghost);
+      }
+    }
     this.path = path; this.pi = 1;
     return !!path;
   }
@@ -244,6 +254,7 @@ export class Ghost {
   }
 
   teleportFar(from) {
+    this.seenHide = null;
     const L = this.game.level;
     let best = null, bd = 0;
     for (let i = 0; i < 12; i++) {
@@ -282,24 +293,35 @@ export class Ghost {
       if (!sameFloor) { this.awareness.set(pl.id, 0); continue; }
       let a = this.awareness.get(pl.id) || 0;
       const inFov = d < 2.2 || Math.abs(angleDiff(this.yaw, Math.atan2(dx, dz))) < (P.fov * D.sense) * Math.PI / 360;
+      // she watched you climb in (saw you out in the open a moment ago): she knows exactly where you are
+      if (pl.hiding && this.seenHide !== pl.hideSpot && (this.sinceSeen.get(pl.id) ?? 99) < 1.0 && (d < 8 || a >= 0.5)) this.seenHide = pl.hideSpot;
       // hidden unless she saw you get in, or you're peeking with the doors pushed wide and she's close
       const hidden = pl.hiding && this.seenHide !== pl.hideSpot && !(pl.exposed && d < 6);
       let visible = false;
       if (!hidden && d < P.sight * 1.2 && inFov) visible = L.los(eye, pe);
+      const knowsSpot = pl.hiding && this.seenHide === pl.hideSpot;
+      if (knowsSpot) { visible = true; a = 1.5; }                   // no need to see through the doors: she knows
+      this.sinceSeen.set(pl.id, visible && !pl.hiding ? 0 : (this.sinceSeen.get(pl.id) ?? 99) + dt);
       if (visible) {
-        let light = pl.flashOn ? 1 : 0.5;
-        if (pl.roomLit) light = Math.max(light, 1);
-        if (pl.crouch) light *= 0.75;
+        // stealth: a torch gives you away, a lit room less so, the dark hides you; crouching low and keeping
+        // still both matter (until she is already chasing you)
+        let light = pl.flashOn ? 1 : 0.45;
+        if (pl.roomLit) light = Math.max(light, 0.85);
+        const stalking = this.state !== 'chase';
+        let stealth = 1;
+        if (pl.crouch && stalking) { light *= 0.6; stealth *= 0.55; }
+        const moving = pl.vel ? Math.hypot(pl.vel.x, pl.vel.z) > 0.4 : true;
+        if (!moving && !pl.flashOn && stalking) stealth *= 0.7;
+        if (this.state === 'lured') stealth *= 0.25;                     // entranced by the music box
         const range = P.sight * light * D.sense * (this.hunt > 0 ? 1.4 : 1);
-        if (d < range) {
-          const rate = d < 3 ? 6 : (1.6 * (1 - d / range) + 0.4) * D.sense;
+        if (knowsSpot) { /* stays fully aware */ } else if (d < range) {
+          const rate = d < 2.2 ? 6 : (1.6 * (1 - d / range) + 0.4) * D.sense * stealth;
           a += rate * dt * (this.state === 'chase' ? 3 : 1);
         } else a -= dt * 0.3;
       } else a -= dt * 0.25;
       a = clamp(a, 0, 1.5);
       this.awareness.set(pl.id, a);
       if (visible && a >= 1 && d < seenD) { seen = pl; seenD = d; }
-      if (visible && pl.hiding === null && pl.justHid) this.seenHide = pl.hideSpot;
     }
 
     // ---------------- hearing
@@ -318,7 +340,9 @@ export class Ghost {
 
     // ---------------- state transitions on sight
     // cooldown only blocks *starting* a hunt/strike; an ongoing chase keeps tracking what it sees
-    if (seen && (this.cool <= 0 || this.state === 'chase' || this.state === 'attack')) {
+    // flinching / fleeing / vanishing / staring ghosts are busy: seeing you must not snap them back into a hunt
+    const busy = ['flinch', 'flee', 'retreat', 'stare', 'stunned'].includes(this.state);
+    if (seen && !busy && (this.cool <= 0 || this.state === 'chase' || this.state === 'attack')) {
       if (this.state !== 'chase' && this.state !== 'alert' && this.state !== 'attack') {
         this.state = 'alert'; this.timer = this.type === 'child' ? 0.7 : 1.1; this.target = seen;
         this.play(P.anims.alert || P.anims.idle, 0.2, true);
@@ -404,7 +428,7 @@ export class Ghost {
     }
 
     // lure (music box)
-    if (this.lure && this.state !== 'chase' && this.state !== 'alert') {
+    if (this.lure && ['roam', 'search', 'investigate', 'track', 'lured'].includes(this.state)) {   // never pulls her off a hunt
       if (this.state !== 'lured') { this.state = 'lured'; this.goTo(this.lure); }
       this.lure.t -= dt;
       if (this.lure.t <= 0) { this.lure = null; this.state = 'roam'; }
@@ -421,6 +445,15 @@ export class Ghost {
         this.chaseT += dt;
         const t = this.target;
         if (!t || !t.alive || t.caught) { this.state = 'search'; this.timer = P.search; break; }
+        // saw them hide: walk straight to the spot and drag them out
+        if (t.hideSpot && this.seenHide === t.hideSpot) {
+          const st = t.hideSpot.stand;
+          this.lastSeenT = 0;
+          if (this.repathT <= 0) { this.goTo({ x: st.x, z: st.z, l: L.layerOfY(st.y + 0.3) }); this.repathT = 0.6; }
+          speed = P.chase * D.speed * (this.shy || 1);
+          if (Math.hypot(st.x - this.pos.x, st.z - this.pos.z) < 0.9) { speed = 0; this.state = 'grab'; this.checkSpot(t.hideSpot); }
+          break;
+        }
         const visibleNow = this.lastSeenT < 0.2;
         const goal = visibleNow ? t.pos : this.lastSeen.clone().addScaledVector(this.lastSeenVel, Math.min(this.lastSeenT, 1.6));
         if (this.repathT <= 0) { this.goTo({ x: goal.x, z: goal.z, l: L.layerOfY((visibleNow ? t.pos.y : this.lastSeen.y) + 0.3) }); this.repathT = visibleNow ? 0.35 : 0.8; }

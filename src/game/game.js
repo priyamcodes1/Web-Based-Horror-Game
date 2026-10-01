@@ -50,6 +50,7 @@ export class Game {
     this.lives = new Map(roster.map((p) => [p.id, config.lives]));
     this.ghostFlicker = 0;
     this.time = 0;
+    this.safeUntil = new Map();   // player id -> game time until which no ghost may catch them (respawn grace)
     this.stats = { deaths: 0, items: 0, notes: 0 };
     this.running = false;
     this.flashT = 0;
@@ -479,14 +480,14 @@ export class Game {
     const p = this.player;
     const camFwd = new THREE.Vector3(0, 0, -1).applyQuaternion(p.camera.quaternion);
     const litRoom = (pos, l) => { const r = this.level.roomAt(pos.x, pos.z, l); return r && this.lights.powerLevel > 0.5 && r.lights.some((a) => a.kind === 'electric' && !a.broken); };
-    if (p.alive) list.push({ id: this.localId, name: settings.playerName, pos: p.pos, eye: p.eyePos, vel: p.vel, alive: p.alive, caught: this.caughtId === this.localId,
+    if (p.alive) list.push({ id: this.localId, name: settings.playerName, pos: p.pos, eye: p.eyePos, vel: p.vel, alive: p.alive, caught: this.caughtId === this.localId || this.isSafe(this.localId),
       hiding: p.hiding, hideSpot: p.hiding, justHid: false, flashOn: p.flashOn && p.battery > 0, roomLit: litRoom(p.pos, p.layer), crouch: p.state !== 'stand',
       lookDir: camFwd, yaw: p.yaw, health: p.health, holdingBreath: p.holdingBreath, exposed: !!(p.hiding && p.peekExposed) });
     for (const r of this.remote.values()) {
       if (!r.alive) continue;
       const spot = r.hd >= 0 ? this.hideList[r.hd] : null;
       list.push({ id: r.id, name: r.name, pos: r.pos, eye: new THREE.Vector3(r.pos.x, r.pos.y + (r.st === 'stand' ? 1.6 : 0.8), r.pos.z), vel: r.vel, alive: true,
-        caught: this.caughtId === r.id, hiding: spot, hideSpot: spot, flashOn: r.flashOn, roomLit: litRoom(r.pos, this.level.layerOfY(r.pos.y + 0.3)),
+        caught: this.caughtId === r.id || this.isSafe(r.id), hiding: spot, hideSpot: spot, flashOn: r.flashOn, roomLit: litRoom(r.pos, this.level.layerOfY(r.pos.y + 0.3)),
         crouch: r.st !== 'stand', lookDir: new THREE.Vector3(-Math.sin(r.yaw), 0, -Math.cos(r.yaw)), yaw: r.yaw, health: r.health ?? 100, holdingBreath: !!r.hb, exposed: !!r.pk });
     }
     return list;
@@ -739,8 +740,11 @@ export class Game {
     }
   }
 
+  /** Just caught: through the death screen and a few seconds after respawning nobody can take them again. */
+  isSafe(id) { return (this.safeUntil.get(id) ?? -1) > this.time; }
+
   catchPlayer(ghost, agent) {
-    if (this.caughtId) { ghost.state = 'chase'; return; }
+    if (this.caughtId || this.isSafe(agent.id)) { ghost.state = 'chase'; return; }
     this.event({ k: 'catch', g: ghost.id, id: agent.id, pos: agent.pos.toArray(), yaw: agent.yaw });
   }
 
@@ -761,6 +765,7 @@ export class Game {
     if (local && this.player.hiding) this.player.exitHide(true);
     if (local) { this.cutscene = true; this.cutsceneVictim = true; audio.setLoop('chase', 0); }
     await playCatch(this, g, victim, local);
+    this.safeUntil.set(ev.id, this.time + 3.5 + 3);   // death screen (3.5 s) + a moment to get your bearings
     this.caughtId = null;
     if (this.isHost) {
       const lives = (this.lives.get(ev.id) ?? 1) - 1;

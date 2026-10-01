@@ -109,7 +109,8 @@ def yaw_quat(angle):
 
 
 def retarget(tgt, clip, frames_range=None, fps=30, in_place=False, loop=None, name=None, face_motion=False, min_speed=0.0, arm_out=9.0,
-             yaw_extra=0.0, ground=True, finger_curl=None, extra_fn=None, speed=1.0, smooth=0, hand_follow=0.0, upright=0.0):
+             yaw_extra=0.0, ground=True, finger_curl=None, extra_fn=None, speed=1.0, smooth=0, hand_follow=0.0, upright=0.0,
+             calm=None, arm_hang=0.0, smooth_extra=None, hand_rel=False):
     """Retarget CMU clip onto armature `tgt` -> muted NLA track `name`. Returns (action, info)."""
     name = name or clip
     src = BVH(clip)
@@ -149,6 +150,13 @@ def retarget(tgt, clip, frames_range=None, fps=30, in_place=False, loop=None, na
         ds = (A @ V(PT[ch[0]] - PT[s])).normalized()
         dt = (rest[t] @ V((0, 1, 0))).normalized()
         TT[t] = dt.rotation_difference(ds) @ rest[t]
+    # hands keep their rest pose *relative to the forearm* at the source T-pose: taking the hand's world rest
+    # (A-pose, already angled down) as the T-pose bends every wrist by the A->T arm angle ("clawed" hands)
+    if hand_rel:
+        for sd in ('l', 'r'):
+            h, fa = 'hand_' + sd, 'lowerarm_' + sd
+            if h in TT and fa in TT:
+                TT[h] = TT[fa] @ rest[fa].inverted() @ rest[h]
 
     # ---- world rotations per frame
     W = {}
@@ -238,15 +246,51 @@ def retarget(tgt, clip, frames_range=None, fps=30, in_place=False, loop=None, na
             rq = Q(V((1, 0, 0)), (pitch(rest[t] @ V((0, 1, 0))) - mean) * upright)
             W[t] = [rq @ q for q in W[t]]
 
+    # ---- optional calm (off by default): shrink each listed bone's motion around its mean pose
+    #      ({bone-name prefix: kept fraction}) - an idle actor's restless head / fidgeting arms read as shaking
+    def mean_q(qs):
+        a = _qarr(qs)
+        a[(a @ a[0]) < 0] *= -1
+        m = a.mean(0); m /= np.linalg.norm(m)
+        return Q(tuple(m))
+    if calm:
+        for t in W:
+            keep = next((v for p, v in calm.items() if t.startswith(p)), None)
+            if keep is None:
+                continue
+            m = mean_q(W[t])
+            W[t] = [m.slerp(q, keep) for q in W[t]]
+
+    # ---- optional arm hang (off by default): re-aim the mean direction of upper arm / forearm (and the hand with
+    #      it) at a relaxed hang - straight down, slightly out, elbow softly bent - keeping the motion around it
+    if arm_hang:
+        for sd, sg in (('l', 1), ('r', -1)):
+            prev = None
+            for bn, tgt_dir in (('upperarm_', V((0.07 * sg, -0.02, -1))), ('lowerarm_', V((0.06 * sg, -0.2, -1)))):
+                t = bn + sd
+                if t not in W:
+                    continue
+                m = V((0, 0, 0))
+                for q in W[t]:
+                    m += q @ V((0, 1, 0))
+                rq = Q().slerp(m.normalized().rotation_difference(tgt_dir.normalized()), arm_hang)
+                W[t] = [rq @ q for q in W[t]]
+                prev = rq
+            if prev is not None and 'hand_' + sd in W:
+                W['hand_' + sd] = [prev @ q for q in W['hand_' + sd]]
+
     # ---- optional clean-up (off by default): temporal smoothing of every joint (CMU capture jitter) and
     #      wrists that mostly follow the forearm (the raw single-marker wrist data flails)
-    if smooth:
+    if smooth or smooth_extra:
         cyc = bool(loop)
         for t in W:
+            passes = int(smooth) + next((v for p, v in (smooth_extra or {}).items() if t.startswith(p)), 0)
+            if not passes:
+                continue
             q = _qarr(W[t])
             for j in range(1, len(q)):
                 if np.dot(q[j], q[j - 1]) < 0: q[j] = -q[j]
-            for _ in range(int(smooth)):
+            for _ in range(passes):
                 prev_ = np.roll(q, 1, 0) if cyc else np.vstack([q[:1], q[:-1]])
                 next_ = np.roll(q, -1, 0) if cyc else np.vstack([q[1:], q[-1:]])
                 for arr in (prev_, next_):

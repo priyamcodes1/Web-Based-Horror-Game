@@ -103,13 +103,14 @@ export class Menu {
   constructor(handlers) {
     this.h = handlers;
     this.stack = ['m-main'];
-    this.cfg = { mode: 'solo', map: 'blackwood', ghostCount: 1, ghostTypes: ['widow'], lives: 3, difficulty: 'normal' };
+    this.cfg = restoreSetup(settings.setup);
     $('.web-tl').innerHTML = webSVG(false);
     $('.web-tr').innerHTML = webSVG(true);
     this.stopBg = menuBackdrop($('#menu-bg'));
     this.stopDrips = dripFrom($('.title'), { every: [1300, 3200], inset: 0.08, textOnly: true, size: () => 10 + Math.random() * 7 });
     this.wire();
     this.buildProfiles(); this.buildMaps(); this.buildGhosts(); this.bindSettings();
+    this.syncSetup();
     $('#in-name').value = settings.playerName || '';
   }
 
@@ -135,11 +136,15 @@ export class Menu {
       if (b.dataset.go) this.go(b.dataset.go);
       if (b.hasAttribute('data-back')) this.back();
     });
-    const seg = (id, key, cb) => $$(`#${id} button`).forEach((b) => b.addEventListener('click', () => {
-      $$(`#${id} button`).forEach((x) => x.classList.toggle('on', x === b));
-      this.cfg[key] = isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v;
-      cb && cb(this.cfg[key]);
-    }));
+    this.segCb = {};
+    const seg = (id, key, cb) => {
+      this.segCb[id] = { key, cb };
+      $$(`#${id} button`).forEach((b) => b.addEventListener('click', () => {
+        this.cfg[key] = isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v;
+        this.showSeg(id);
+        this.saveSetup();
+      }));
+    };
     seg('mode-seg', 'mode', (v) => {
       $('#join-box').classList.toggle('hidden', v !== 'join');
       $$('.host-only').forEach((el) => el.classList.toggle('hidden', v === 'join'));
@@ -150,6 +155,7 @@ export class Menu {
     $$('#lives button').forEach((b) => b.addEventListener('click', () => {
       this.cfg.lives = Math.max(1, Math.min(5, this.cfg.lives + +b.dataset.d));
       $('#lives b').textContent = this.cfg.lives;
+      this.saveSetup();
     }));
     $('#btn-start').addEventListener('click', () => {
       settings.playerName = ($('#in-name').value || '').trim().slice(0, 16) || 'Survivor';
@@ -232,6 +238,24 @@ export class Menu {
     }
   }
 
+  /** Reflect this.cfg in a segmented control (highlight + its side effects). */
+  showSeg(id) {
+    const { key, cb } = this.segCb[id];
+    $$(`#${id} button`).forEach((x) => x.classList.toggle('on', String(this.cfg[key]) === x.dataset.v));
+    cb && cb(this.cfg[key]);
+  }
+
+  /** Restored Play-screen choices -> controls (maps/ghosts are built from this.cfg already). */
+  syncSetup() {
+    for (const id of Object.keys(this.segCb)) this.showSeg(id);
+    $('#lives b').textContent = this.cfg.lives;
+  }
+
+  saveSetup() {
+    settings.setup = { ...this.cfg, ghostTypes: [...this.cfg.ghostTypes] };
+    saveSettings();
+  }
+
   buildMaps() {
     const box = $('#maps');
     box.innerHTML = MAP_LIST.map((id) => `<div class="map ${id === this.cfg.map ? 'on' : ''}" data-id="${id}"><canvas width="240" height="180"></canvas>
@@ -239,7 +263,7 @@ export class Menu {
     box.querySelectorAll('.map').forEach((el) => {
       drawPlan(el.querySelector('canvas'), MAPS[el.dataset.id]);
       el.title = MAPS[el.dataset.id].desc;
-      el.addEventListener('click', () => { this.cfg.map = el.dataset.id; box.querySelectorAll('.map').forEach((x) => x.classList.toggle('on', x === el)); audio.play('ui_click'); });
+      el.addEventListener('click', () => { this.cfg.map = el.dataset.id; box.querySelectorAll('.map').forEach((x) => x.classList.toggle('on', x === el)); audio.play('ui_click'); this.saveSetup(); });
     });
   }
 
@@ -251,7 +275,7 @@ export class Menu {
       const id = el.dataset.id, list = this.cfg.ghostTypes;
       if (list.includes(id)) { if (list.length > 1) list.splice(list.indexOf(id), 1); }
       else { list.push(id); while (list.length > this.cfg.ghostCount) list.shift(); }
-      this.fixGhosts(); audio.play('ui_click');
+      this.fixGhosts(); audio.play('ui_click'); this.saveSetup();
     }));
   }
 
@@ -306,6 +330,20 @@ export class Menu {
   }
 
   error(msg) { alert(msg); }
+}
+
+/** Last session's Play-screen setup, validated against what exists now (falls back to defaults). */
+function restoreSetup(saved) {
+  const cfg = { mode: 'solo', map: 'blackwood', ghostCount: 1, ghostTypes: ['widow'], lives: 3, difficulty: 'normal' };
+  if (!saved || typeof saved !== 'object') return cfg;
+  if (['solo', 'host', 'join'].includes(saved.mode)) cfg.mode = saved.mode;
+  if (MAP_LIST.includes(saved.map)) cfg.map = saved.map;
+  if ([1, 2, 3].includes(saved.ghostCount)) cfg.ghostCount = saved.ghostCount;
+  const types = Array.isArray(saved.ghostTypes) ? saved.ghostTypes.filter((t) => t in GHOST_TYPES) : [];
+  if (types.length) cfg.ghostTypes = [...new Set(types)].slice(-cfg.ghostCount);
+  if (Number.isInteger(saved.lives)) cfg.lives = Math.max(1, Math.min(5, saved.lives));
+  if (['easy', 'normal', 'nightmare'].includes(saved.difficulty)) cfg.difficulty = saved.difficulty;
+  return cfg;
 }
 
 function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }

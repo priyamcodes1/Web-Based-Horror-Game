@@ -1,5 +1,5 @@
 // Boot + app flow: menu -> (lobby) -> loading -> game -> results.
-import { loadSettings, settings, saveSettings } from './core/settings.js';
+import { loadSettings, settings } from './core/settings.js';
 import { input } from './core/input.js';
 import { audio } from './audio/audio.js';
 import { Gfx } from './gfx/renderer.js';
@@ -224,6 +224,5 @@ if (import.meta.env.DEV) {
   };
 }
 
-// keep settings persisted on exit
-addEventListener('beforeunload', () => saveSettings());
+// every change is saved as it happens; no save-on-exit (a stale tab would overwrite newer settings)
 void settings;
