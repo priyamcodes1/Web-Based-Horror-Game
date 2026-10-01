@@ -254,6 +254,89 @@ function relaxShoulders(root, bones) {
   return apply;
 }
 
+/** Relaxed human hands. The clips' baked finger curl reads as a claw and the hanging wrists turn the palms backward
+ *  against the thighs. After the clip: fingers loosely flexed (a little more toward the pinky, the thumb resting
+ *  along the index), and while an arm hangs the forearm/wrist turn so the palm faces the leg. `grip` (0..1, per
+ *  side) closes a hand round something it holds (the torch). Curl axes come from the bind pose. */
+const RELAX = { index: 0.42, middle: 0.52, ring: 0.6, pinky: 0.68, thumb: 0.32 };
+const SEGK = { '01': 0.8, '02': 1.0, '03': 0.65 }, SEGG = { '01': 1.45, '02': 1.65, '03': 1.1 };
+const SPREAD = { index: 0.03, ring: -0.03, pinky: -0.07 };   // what's left of the fan between the fingers (rad)
+function relaxHands(root, bones) {
+  root.updateMatrixWorld(true);
+  const W = (b, out = new THREE.Vector3()) => b.getWorldPosition(out);
+  const hands = [];
+  for (const s of ['l', 'r']) {
+    const hand = bones['hand_' + s], fore = bones['lowerarm_' + s], up = bones['upperarm_' + s];
+    const idx = bones['index_01_' + s], pky = bones['pinky_01_' + s], mid = bones['middle_01_' + s];
+    if (!hand || !fore || !up || !idx || !pky || !mid) continue;
+    // palm normal at bind: right palm = A x F, left palm = F x A (A = pinky -> index, F = wrist -> fingers)
+    const F = W(mid).sub(W(hand)).normalize();
+    const A = W(idx).sub(W(pky)); A.addScaledVector(F, -A.dot(F)).normalize();
+    const palm = (s === 'r' ? A.clone().cross(F) : F.clone().cross(A)).normalize();
+    const palmLocal = palm.clone().applyQuaternion(hand.getWorldQuaternion(new THREE.Quaternion()).invert());
+    // the bind pose fans the fingers wide: measure each finger's angle off the middle finger, in the palm plane
+    const inPalm = (v) => v.addScaledVector(palm, -v.dot(palm)).normalize();
+    const mid2 = bones['middle_02_' + s];
+    const dMid = mid2 ? inPalm(W(mid2).sub(W(mid))) : F.clone();
+    const fingers = [];
+    for (const f of ['index', 'middle', 'ring', 'pinky', 'thumb']) for (const k of ['01', '02', '03']) {
+      const b = bones[`${f}_${k}_${s}`]; if (!b) continue;
+      const next = bones[`${f}_0${+k + 1}_${s}`];
+      const d = next ? W(next).sub(W(b)) : W(b).sub(W(b.parent));
+      const ax = d.clone().normalize().cross(palm);
+      if (ax.lengthSq() < 1e-8) continue;
+      const wq = b.getWorldQuaternion(new THREE.Quaternion()).invert();
+      ax.normalize().applyQuaternion(wq);
+      let spread = null;
+      if (k === '01' && SPREAD[f] !== undefined) {
+        const df = inPalm(d.clone());
+        const ang = Math.atan2(df.clone().cross(dMid).dot(palm), df.dot(dMid));     // turn that lines it up with the middle
+        const sideSign = Math.sign(df.clone().cross(dMid).dot(palm)) || 1;
+        const keepFan = Math.abs(SPREAD[f]) * -sideSign;                              // ...minus a natural little gap
+        spread = new THREE.Quaternion().setFromAxisAngle(palm.clone().applyQuaternion(wq).normalize(), ang + keepFan);
+      }
+      fingers.push({ b, ax, spread, rest: b.quaternion.clone(), relax: RELAX[f] * (f === 'thumb' ? 1 : SEGK[k]), grip: f === 'thumb' ? 0.7 : SEGG[k] * 0.85 });
+    }
+    hands.push({ s, hand, fore, up, palmLocal, fingers });
+  }
+  if (!hands.length) return null;
+  const q = new THREE.Quaternion(), a = new THREE.Vector3(), n = new THREE.Vector3(), tgt = new THREE.Vector3(), c = new THREE.Vector3();
+  const pelvis = bones.pelvis;
+  return (grip = {}) => {
+    root.updateMatrixWorld(true);
+    for (const H of hands) {
+      // ---- palms toward the legs while the arm hangs
+      W(H.hand, a).sub(W(H.fore, n)).normalize();                          // forearm axis, elbow -> wrist
+      const hang = THREE.MathUtils.smoothstep(-a.y, 0.55, 0.85);           // pointing down
+      if (hang > 0.01 && pelvis && !(grip[H.s] > 0.5)) {
+        const hw = W(H.hand, c);
+        tgt.copy(W(pelvis, tgt)).sub(hw); tgt.y = 0;                       // toward the body's midline...
+        tgt.normalize().addScaledVector(new THREE.Vector3(0, 0, -1).applyQuaternion(root.getWorldQuaternion(q)), 0.25);   // ...a touch back
+        n.copy(H.palmLocal).applyQuaternion(H.hand.getWorldQuaternion(q));
+        n.addScaledVector(a, -n.dot(a)); tgt.addScaledVector(a, -tgt.dot(a));
+        if (n.lengthSq() > 1e-6 && tgt.lengthSq() > 1e-6) {
+          n.normalize(); tgt.normalize();
+          const ang = THREE.MathUtils.clamp(Math.atan2(n.clone().cross(tgt).dot(a), n.dot(tgt)), -1.7, 1.7) * hang;
+          // share the twist: most of it in the forearm (it is the forearm that turns), the rest at the wrist
+          for (const [bone, k] of [[H.fore, 0.6], [H.hand, 0.4]]) {
+            const wq = bone.getWorldQuaternion(new THREE.Quaternion());
+            wq.premultiply(q.setFromAxisAngle(a, ang * k));
+            bone.quaternion.copy(bone.parent.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(wq));
+            bone.updateMatrixWorld(true);
+          }
+        }
+      }
+      // ---- fingers: relaxed, or closed round what the hand holds
+      const g = THREE.MathUtils.clamp(grip[H.s] || 0, 0, 1);
+      for (const f of H.fingers) {
+        f.b.quaternion.copy(f.rest);
+        if (f.spread) f.b.quaternion.multiply(f.spread);
+        f.b.quaternion.multiply(q.setFromAxisAngle(f.ax, f.relax + (f.grip - f.relax) * g));
+      }
+    }
+  };
+}
+
 /**
  * A ready-to-animate survivor: { root, mixer, play(name, fade, once, speed), update(dt), bones, height, meta }.
  */
@@ -293,6 +376,7 @@ export function makeSurvivor(index) {
   const physics = springs.length ? new SpringBones(root, { springs, colliders }) : null;
   const skirtFit = makeSkirtFit(root, bones);
 
+  const handsFix = relaxHands(root, bones);
   const shoulders = relaxShoulders(root, bones);
 
   const mixer = new THREE.AnimationMixer(root);
@@ -301,6 +385,7 @@ export function makeSurvivor(index) {
   const S = {
     id: c.id, name: c.name, sex: c.sex, root, mixer, bones, meta, clips, physics,
     height: meta.height || 1.75,
+    grip: { l: 0, r: 0 },                 // 0 relaxed .. 1 closed round something held (set by the owner)
     get anim() { return currentName; },
     play(name, fade = 0.25, once = false, speed = 1) {
       const clip = clips[name];
@@ -318,6 +403,7 @@ export function makeSurvivor(index) {
     update(dt) {
       mixer.update(dt);
       if (shoulders) shoulders();
+      if (handsFix) handsFix(S.grip);
       if (skirtFit) skirtFit();
       if (physics) physics.update(dt);
     },

@@ -160,6 +160,7 @@ export class Avatar {
     }
     this.root.position.copy(this.pos);
     this.root.rotation.y = this.bodyYaw + Math.PI;     // model faces +Z; yaw 0 looks toward -Z
+    this.char.grip.r = this.torch.visible ? 1 : 0;     // the torch hand closes round it
     this.char.update(dt);
     if (!scripted) this.aimLayer();
     this.updateEmote(dt, scripted);
