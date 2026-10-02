@@ -109,10 +109,11 @@ export class FPBody {
   }
 
   // ------------------------------------------------------------------ setup
-  /** Your own chest sits right under the eye and would hide your legs when you look down: every fragment skinned
-   *  mostly to the upper spine / neck / collarbones is dropped (first-person copy only; arms and hips stay). */
+  /** Only the neck and head go (first-person copy): they sit on top of the camera. The chest stays - cutting it
+   *  left an open shell you looked straight down into; now looking down shows your chest and belly, with the legs
+   *  beyond (the body leans back out of the way as you look down, see update). */
   cutChest() {
-    const names = ['spine_02', 'spine_03', 'neck_01', 'head', 'clavicle_l', 'clavicle_r'];
+    const names = ['neck_01', 'head'];
     this.root.traverse((o) => {
       if (!o.isSkinnedMesh || /skirt/i.test(o.name)) return;
       const ids = names.map((n) => o.skeleton.bones.findIndex((b) => b.name === n)).filter((i) => i >= 0);
@@ -257,7 +258,7 @@ if (vChest > 0.45) discard;`);
     const down = clamp(-p.pitch - 0.7, 0, 0.8);
     // crouched, the clip's head rides above the low crouch camera: sink the body part of the way, slide the rest back
     const sink = Math.min(above * 0.6, 0.25);
-    const backOff = 0.13 + (above - sink) * 0.9 + down * 0.15;
+    const backOff = 0.13 + (above - sink) * 0.9 + down * 0.28;
     const fwd = _b.set(-Math.sin(this.bodyYaw), 0, -Math.cos(this.bodyYaw));
     this.root.position.addScaledVector(fwd, -backOff);
     this.root.position.y -= sink;
