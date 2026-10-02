@@ -6,11 +6,25 @@ import Peer from 'peerjs';
 const PREFIX = 'bwmanor-v1-';
 const ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
 
-function iceServers() {
-  const list = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' }];
+const STUN = [{ urls: ['stun:stun.cloudflare.com:3478', 'stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+let iceCache = null;   // { list, relay, at }
+
+/** ICE servers: public STUN, plus TURN relay credentials from /api/ice (a Vercel function; see api/ice.js) so
+ *  players on different networks can still connect when their routers block direct peer-to-peer links.
+ *  A static TURN server from VITE_TURN_URL / _USER / _PASS (comma-separated URLs) is added too if set. */
+async function iceServers() {
+  if (iceCache && performance.now() - iceCache.at < 30 * 60e3) return iceCache;
+  let list = STUN.slice(), relay = false;
+  try {
+    const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 4000);
+    const r = await fetch('/api/ice', { signal: ctl.signal, cache: 'no-store' });
+    clearTimeout(to);
+    if (r.ok) { const j = await r.json(); if (Array.isArray(j.iceServers) && j.iceServers.length) { list = j.iceServers; relay = !!j.relay; } }
+  } catch (_) { /* no relay endpoint (local dev) - STUN only */ }
   const env = import.meta.env || {};
-  if (env.VITE_TURN_URL) list.push({ urls: env.VITE_TURN_URL, username: env.VITE_TURN_USER, credential: env.VITE_TURN_PASS });
-  return list;
+  if (env.VITE_TURN_URL) { list.push({ urls: env.VITE_TURN_URL.split(',').map((u) => u.trim()), username: env.VITE_TURN_USER, credential: env.VITE_TURN_PASS }); relay = true; }
+  iceCache = { list, relay, at: performance.now() };
+  return iceCache;
 }
 
 export class Net {
@@ -29,13 +43,14 @@ export class Net {
   on(type, fn) { this.handlers.set(type, fn); }
   emit(type, msg, from) { const h = this.handlers.get(type); if (h) h(msg, from); }
 
-  _opts() { return { debug: 0, config: { iceServers: iceServers() } }; }
+  async _opts() { const ice = await iceServers(); this.relay = ice.relay; return { debug: 0, config: { iceServers: ice.list } }; }
 
-  host() {
+  async host() {
+    const opts = await this._opts();
     return new Promise((resolve, reject) => {
       const tryOnce = (attempt) => {
         const code = Array.from({ length: 4 }, () => ALPHA[(Math.random() * ALPHA.length) | 0]).join('');
-        const peer = new Peer(PREFIX + code, this._opts());
+        const peer = new Peer(PREFIX + code, opts);
         peer.on('open', () => {
           this.peer = peer; this.isHost = true; this.online = true; this.code = code; this.myId = peer.id;
           peer.on('connection', (c) => this._accept(c));
@@ -52,18 +67,28 @@ export class Net {
     });
   }
 
-  join(code) {
+  async join(code) {
+    const opts = await this._opts();
     return new Promise((resolve, reject) => {
-      const peer = new Peer(undefined, this._opts());
-      const timer = setTimeout(() => reject(new Error('Could not reach that room. Check the code and try again.')), 15000);
+      let done = false;
+      const peer = new Peer(undefined, opts);
+      const fail = (msg) => { if (done) return; done = true; clearTimeout(timer); try { peer.destroy(); } catch (_) { /* ignore */ } this.peer = null; this.online = false; reject(new Error(msg)); };
+      // the room exists (else 'peer-unavailable' fires at once) but no direct link could be made in time
+      const blocked = () => (this.relay
+        ? 'Found the room, but could not connect to the host. Ask the host to check their connection, then try again.'
+        : 'Found the room, but your networks blocked a direct connection (no relay server is set up). Try again, or both join from the same Wi-Fi.');
+      const timer = setTimeout(() => fail(blocked()), 20000);
       peer.on('open', () => {
         this.peer = peer; this.isHost = false; this.online = true; this.myId = peer.id; this.code = code.toUpperCase();
         const c = peer.connect(PREFIX + this.code, { reliable: true, serialization: 'json' });
-        c.on('open', () => { clearTimeout(timer); this.conns.set(c.peer, c); this._wire(c); resolve(); });
-        c.on('error', () => { clearTimeout(timer); reject(new Error('Connection failed.')); });
+        c.on('open', () => { if (done) return; done = true; clearTimeout(timer); this.conns.set(c.peer, c); this._wire(c); resolve(); });
+        c.on('error', () => fail(blocked()));
+        // ICE gave up (every route tried): say so now instead of waiting out the timer
+        const watch = () => { const pc = c.peerConnection; if (!pc) return setTimeout(watch, 200); pc.addEventListener('iceconnectionstatechange', () => { if (pc.iceConnectionState === 'failed') fail(blocked()); }); };
+        watch();
         peer.on('call', (call) => this._answerCall(call));
       });
-      peer.on('error', (e) => { clearTimeout(timer); reject(new Error(this._err(e))); });
+      peer.on('error', (e) => fail(this._err(e)));
     });
   }
 
