@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { makeSurvivor } from './cast.js';
 import { cloneProp, applyLibrary } from '../core/assets.js';
 import { clamp, dampAngle, angleDiff } from '../core/util.js';
-import { emoteTarget } from '../gfx/armIK.js';
+import { emoteGrip, bendKnees } from '../gfx/emote.js';
 
 const V3 = (x, y, z) => new THREE.Vector3(x, y, z);
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _d = new THREE.Vector3();
@@ -285,22 +285,19 @@ if (vChest > 0.45) discard;`);
       for (const [t, name] of A.def.events || []) if (A.t >= t && !A.fired.has(name)) { A.fired.add(name); A.events[name]?.(); }
       if (A.t >= A.def.dur) { for (const k in A.events) if (!A.fired.has(k)) A.events[k](); this.action = null; }
     }
-    // [J] held: the right hand drops to the front of the hips (torch tucked away) and pumps back and forth
+    // [J] held: knees bend, the torch is tucked away and the right hand closes into a fist in front of the hips,
+    // stroking with a little wrist roll (same pose everyone else sees on your avatar, gfx/emote.js)
     const em = p.emoting && !this.action;
     this.emoteW += ((em ? 1 : 0) - this.emoteW) * Math.min(1, dt * 6);
     if (this.emoteW > 0.001) {
-      this.emotePhase += dt * Math.PI * 2 * 2.4;
+      this.emotePhase += dt * Math.PI * 2 * 2.6;
+      bendKnees(this.bones, this.root, 0.075 * this.scale * ease(this.emoteW), this.bodyYaw);
+      this.root.updateMatrixWorld(true);
       cam.updateMatrixWorld();
-      const T = emoteTarget(this.bones.pelvis, this.bodyYaw, this.emotePhase);
-      const right = V3(Math.cos(this.bodyYaw), 0, -Math.sin(this.bodyYaw));
-      const fwd = V3(-Math.sin(this.bodyYaw), 0, -Math.cos(this.bodyYaw));
-      const palmW = right.clone().negate().add(V3(0, 0.2, 0)).normalize();          // palm turned in
-      const fingW = V3(0, -1, 0).addScaledVector(fwd, 0.35).normalize();            // knuckles down and forward
-      const wrist = T.clone().addScaledVector(fingW, -0.07 * this.scale).addScaledVector(palmW, -0.03 * this.scale);
-      wrist.addScaledVector(fwd, -0.02 * Math.cos(this.emotePhase));                // the wrist leads the stroke a little
+      const G = emoteGrip(this.bones.pelvis, this.bodyYaw, this.emotePhase, this.scale);
       const invQ = cam.quaternion.clone().invert();
-      const W = wrist.applyMatrix4(_m.copy(cam.matrixWorld).invert());
-      const E = palmPose('r', W.toArray(), palmW.applyQuaternion(invQ).toArray(), fingW.applyQuaternion(invQ).toArray(), 0.88, 0.8);
+      const W = G.wrist.applyMatrix4(_m.copy(cam.matrixWorld).invert());
+      const E = pose(W.toArray(), G.A.applyQuaternion(invQ).toArray(), G.F.applyQuaternion(invQ).toArray(), 0.92, 0.85);
       lerpPose(this.cur.r, E, ease(this.emoteW), this.cur.r);
     }
     this.w.l += (lw - this.w.l) * Math.min(1, dt * 9);

@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { cloneProp, applyLibrary } from '../core/assets.js';
 import { makeSurvivor, castById } from './cast.js';
 import { dampAngle, angleDiff, clamp } from '../core/util.js';
-import { twoBoneIK, emoteTarget } from '../gfx/armIK.js';
+import { poseEmote } from '../gfx/emote.js';
 
 const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _v = new THREE.Vector3(), _e = new THREE.Euler();
 const UP = new THREE.Vector3(0, 1, 0);
@@ -160,7 +160,7 @@ export class Avatar {
     }
     this.root.position.copy(this.pos);
     this.root.rotation.y = this.bodyYaw + Math.PI;     // model faces +Z; yaw 0 looks toward -Z
-    this.char.grip.r = this.torch.visible ? 1 : 0;     // the torch hand closes round it
+    this.char.grip.r = Math.max(this.torch.visible ? 1 : 0, this.emoteW || 0);   // closes round the torch (or the [J] fist)
     this.char.update(dt);
     if (!scripted) this.aimLayer();
     this.updateEmote(dt, scripted);
@@ -194,21 +194,12 @@ export class Avatar {
     this.root.updateMatrixWorld(true);
   }
 
-  /** [J] gag emote seen by everyone else: right hand at the front of the hips, pumping. */
+  /** [J] gag emote seen by everyone else: knees bent, elbow tucked, fist stroking in front of the hips. */
   updateEmote(dt, scripted) {
     this.emoteW = (this.emoteW || 0) + (((this.emote && !scripted) ? 1 : 0) - (this.emoteW || 0)) * Math.min(1, dt * 6);
     if (this.emoteW < 0.01) return;
-    const B = this.char.bones;
-    if (!B.upperarm_r || !B.pelvis) return;
-    this.emotePhase = (this.emotePhase || 0) + dt * Math.PI * 2 * 2.4;
-    this.root.updateMatrixWorld(true);
-    const T = emoteTarget(B.pelvis, this.bodyYaw, this.emotePhase);
-    const C = B.hand_r.getWorldPosition(new THREE.Vector3());
-    T.lerpVectors(C, T, this.emoteW);
-    const right = new THREE.Vector3(Math.cos(this.bodyYaw), 0, -Math.sin(this.bodyYaw));
-    const pole = B.upperarm_r.getWorldPosition(new THREE.Vector3()).addScaledVector(right, 0.35).add(new THREE.Vector3(0, -0.25, 0));
-    twoBoneIK(B.upperarm_r, B.lowerarm_r, B.hand_r, T, pole);
-    this.root.updateMatrixWorld(true);
+    this.emotePhase = (this.emotePhase || 0) + dt * Math.PI * 2 * 2.6;
+    poseEmote(this.char, this.root, this.bodyYaw, this.emotePhase, this.emoteW);
   }
 
   updateTorch() {

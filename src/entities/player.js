@@ -202,7 +202,7 @@ export class Player {
       if (this.slideT <= 0) this.state = cDown || !this.canStand() ? 'crouch' : 'stand';
     }
     const tgt = this.state === 'stand' ? STAND : this.state === 'crouch' ? CROUCH : SLIDE;
-    this.eye = damp(this.eye, tgt.eye, 12, dt);
+    this.eye = damp(this.eye, tgt.eye - (this.emoting ? 0.07 : 0), 12, dt);   // [J]: knees bent
     this.h = tgt.h;
 
     // ---- speed + stamina
